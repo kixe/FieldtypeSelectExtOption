@@ -44,6 +44,10 @@ Select a column of the source datatable to get the label for the option tag.
 All types allowed.
 Default Value or Value if nothing selected same as **Option Value**.
 
++ #### Filter
+Small Filter to limit the options if needed. Adds a WHERE condition to the SELECT statement 
+which pulls the options from the datatable.
+
 + #### Order by Label
 Options are ordered by **Option Value**. Check to order by **Option Label**. 
 

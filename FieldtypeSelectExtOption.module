@@ -40,8 +40,6 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	}
 	
     protected $page;
-
-    public function init() {}
     	
 	/**
 	 * Get an associative array of all values of the row depending to the selected single value.
@@ -130,7 +128,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$inputfield = $this->modules->get($t);
 
 		// get the options array
-		$options = $this->getExtOptions($field->option_table,$field->option_value,$field->option_label,$field->option_order,$field->option_asc);
+		$options = $this->getExtOptions($field->option_table,$field->option_value,$field->option_label,$this->filter($field),$field->option_order,$field->option_asc);
 		$options = ($options)?$options:array(0 => 'no data');
 
 		foreach($options as $optval => $label) {			
@@ -189,7 +187,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 * @return array(value => label)
 	 *
 	 */
-	protected function getExtOptions($table, $value = false, $label = false, $order = false, $desc = false) {
+	protected function getExtOptions($table, $value = false, $label = false, $filter= false, $order = false, $dir = false) {
 
 		// check if table exist
 		$table = $this->database->escapeTable($table);
@@ -214,14 +212,25 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		$options = array();
 		
-		// TODO prepared statement
-		$desc = ((bool)$desc)?'DESC':'ASC';
+		$dir = ((bool)$dir)?'DESC':'ASC';
 		$order = ((bool)$order)?$label:$value;
-        $sql = "SELECT $value,$label FROM `$table` ORDER BY $order $desc";
-        $query = $this->database->query($sql);
+		// validate/sanitize filterstring
+		$filter = ($filter)?"WHERE $filter":'';
+		$query = $this->database->prepare("SELECT * FROM `$table` $filter ORDER BY :order :dir");
+		$query->execute(array(':order' => $order, ':dir' => $dir));
 		if(!$query->rowCount()) return null;
-        foreach($query->fetchAll() as $row) $options[$row[$value]] = $row[$label];
+        while($row = $query->fetch(PDO::FETCH_ASSOC)) $options[$row[$value]] = $row[$label];
         return $options;
+	}
+
+	protected function filter(Field $field) {
+		// all parts set?
+		if(!$field->filter_column||!$field->filter_selector||!$field->filter_value) return false;
+		// valid operator?
+		$operators = array(' LIKE ',' NOT LIKE ');
+		if(!$this->database->isOperator($field->filter_selector) && !in_array($field->filter_selector,$operators))  return false;
+		// escape column, quote value
+		return $this->database->escapeCol($field->filter_column).$field->filter_selector.$this->database->quote($field->filter_value);
 	}
 
 	public function getBlankValue(Page $page, Field $field) {
@@ -333,6 +342,44 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->columnWidth = 33; 
 		$fieldset->append($f);
 
+		// option filter
+		$fieldset = $this->modules->get("InputfieldFieldset");
+		$fieldset->label = _('Filter');
+		$fieldset->description = _("Configure to limit the option list.");
+		$fc=($field->filter_column)?$field->filter_column:'[Column]';
+		$fs=($field->filter_selector)?$field->filter_selector:'[Selector Operator]';
+		$fv=($field->filter_value)?$field->filter_value:'[Value]';
+		$fieldset->notes = _("SELECT * FROM $field->option_table WHERE $fc$fs'$fv'");
+		$fieldset->collapsed = Inputfield::collapsedBlank;
+		$inputfields->add($fieldset);
+
+		// filter column
+		$f = $this->modules->get("InputfieldSelect");
+		$f->label = _("Column");
+		$f->attr('name', 'filter_column');
+		$f->attr('value', $field->filter_column);
+		if ($columns) foreach ($columns as $filtercol) $f->addOption($filtercol, $filtercol);
+		$f->columnWidth = 33; 
+		$fieldset->append($f);
+
+		// filter selector
+		$f = $this->modules->get("InputfieldSelect");
+		$f->label = _("Selector Operator");
+		$f->attr('name', 'filter_selector');
+		$f->attr('value', $field->filter_selector);
+		$selectors = array('=', '<', '>', '>=', '<=', '<>', '!=', ' LIKE ',' NOT LIKE ');
+		foreach ($selectors as $selector) $f->addOption($selector, $selector);
+		$f->columnWidth = 34; 
+		$fieldset->append($f);
+
+		// filter value
+		$f = $this->modules->get("InputfieldText");
+		$f->label = _("Value");
+		$f->attr('name', 'filter_value');
+		$f->attr('value', $field->filter_value);
+		$f->columnWidth = 33; 
+		$fieldset->append($f);
+
 		// option orderby
 		$f = $this->modules->get("InputfieldCheckbox");
 		$f->label = _("Order by Label");
@@ -352,9 +399,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$inputfields->append($f);
 
 		return $inputfields;
-
 	}
-
 }
 
 /**
