@@ -45,7 +45,7 @@ All types allowed.
 Default Value or Value if nothing selected same as **Option Value**.
 
 + #### Filter
-Small Filter to limit the options if needed. Adds a WHERE condition to the SELECT statement 
+Small Filter to limit the options if needed. Adds a **WHERE** condition to the **SELECT** statement 
 which pulls the options from the datatable.
 
 + #### Order by Label
