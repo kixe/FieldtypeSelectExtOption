@@ -109,12 +109,12 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$v = $this->sleepValue($page,$field,$page->$field);
 
 		/**
-		 * Class InputfieldSelect (parent class of all selects) convert object values to string so we add hook before render()
-		 * to convert values
+		 * Hook prevents object to string conversion in Class InputfieldSelect.
+		 * 
 		 * @return int/ array
 		 *
 		 */
-    	$this->addHookBefore($t.'::render', function($event) {
+     	$this->addHookBefore($t.'::render', function($event) {
    		$field = $event->object->name;
 		   	$object = $this->page->$field;
 			if ($object instanceof SelectExtOption) $event->object->setAttribute('value',$object->value);

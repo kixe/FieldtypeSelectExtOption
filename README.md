@@ -10,7 +10,7 @@ Access to all values in the corresponding row of the source table via API. Front
 ## Create a new field
 + # Step 1: Create a new field select fieldtype **SelectExtOption**.
 + # Step 2: Define options under tab **Details**
-+ # Step 3: Save. Done! 😃
++ # Step 3: Save. Done! ![:-)](https://github.com/tonk/markdown/blob/master/smilies/smiley.gif)
 
 ## Settings
 ![Screenshot](https://raw.githubusercontent.com/kixe/FieldtypeSelectExtOption/master/screenshot.jpg)
