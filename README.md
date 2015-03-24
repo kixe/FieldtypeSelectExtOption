@@ -26,7 +26,7 @@ Fieldtype **SelectExtOption** is compatible with the following Inputfieldtypes.
 
  InputfieldAsmSelect selections are sortable.
  3d party modules maybe supported too.  
- Have a look here: [**Developers Note**](#developers-note).
+ Have a look here: [**Developers Note**](#devnote).
 
 + #### Source Table
 Choose any datatable in the database including those which are not depending to Processwire. 
@@ -40,7 +40,7 @@ Default Value or Value if nothing selected is always the first column of the tab
     
     *note: Option will overwrite the preceding option with same value while generating the select. Unique values recommended.*
 
-+ #### Option Label ####
++ #### Option Label
 Select a column of the source datatable to get the label for the option tag.  
     &lt;option&gt;**Option Label**&lt;/option&gt;  
 All types allowed.
@@ -171,7 +171,7 @@ array (size=2)
 
 ```
 
-## Developers Note<a id="developers-note"></a>
+## Developers Note<a id="devnote"></a>
 3d party Inputfieldtypes are supported too, if they are subclasses of **InputfieldSelect**
 and have a hookable render() method. Furthermore they should be added in settings of **InputfieldPage** module.
 No guarantees that these Inputfieldtypes will work as expected.
