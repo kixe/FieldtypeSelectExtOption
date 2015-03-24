@@ -94,19 +94,12 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	}
 
 	public function getInputfield(Page $page, Field $field) {
-		// choose type of inputfield
-		switch ($field->input_type) {
-			case 0: $t = 'InputfieldSelect';break;
-			case 1: $t = 'InputfieldRadios'; break;
-			case 2: $t = 'InputfieldCheckboxes'; break;
-			case 3: $t = 'InputfieldSelectMultiple';break;
-			case 4: $t = 'InputfieldAsmSelect'; break;
-			default: $t = 'InputfieldSelect';
-		}
-
-    	// set property
+	
+		// set property
     	$this->page = $page;
 		$v = $this->sleepValue($page,$field,$page->$field);
+		// prevent frontend error
+		$class = ($field->input_type)?$field->input_type:'InputfieldSelect';
 
 		/**
 		 * Hook prevents object to string conversion in Class InputfieldSelect.
@@ -114,7 +107,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		 * @return int/ array
 		 *
 		 */
-     	$this->addHookBefore($t.'::render', function($event) {
+     	$this->addHookBefore($class.'::render', function($event) {
    		$field = $event->object->name;
 		   	$object = $this->page->$field;
 			if ($object instanceof SelectExtOption) $event->object->setAttribute('value',$object->value);
@@ -125,7 +118,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			}
     	});
     	
-		$inputfield = $this->modules->get($t);
+		$inputfield = $this->modules->get($class);
 
 		// get the options array
 		$options = $this->getExtOptions($field->option_table,$field->option_value,$field->option_label,$this->filter($field),$field->option_order,$field->option_asc);
@@ -213,11 +206,12 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$options = array();
 		
 		$dir = ((bool)$dir)?'DESC':'ASC';
-		$order = ((bool)$order)?$label:$value;
+		$order = ($order)?$order:$label;
+		$order = $this->database->escapeCol($order);
 		// validate/sanitize filterstring
 		$filter = ($filter)?"WHERE $filter":'';
-		$query = $this->database->prepare("SELECT * FROM `$table` $filter ORDER BY :order :dir");
-		$query->execute(array(':order' => $order, ':dir' => $dir));
+		$query = $this->database->prepare("SELECT * FROM `$table` $filter ORDER BY $order $dir");
+		$query->execute();
 		if(!$query->rowCount()) return null;
         while($row = $query->fetch(PDO::FETCH_ASSOC)) $options[$row[$value]] = $row[$label];
         return $options;
@@ -261,7 +255,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
     public function wakeupValue(Page $page, Field $field, $value) {
 		if(!$value) return $this->getBlankValue($page,$field);
-		if($field->input_type < 2) return $this->getSingleValue($field,array_pop($value));
+		$module = $this->modules->get($field->input_type);
+		if(!$module instanceof InputfieldHasArrayValue) return $this->getSingleValue($field,array_pop($value));
 		$return = new WireArray();
 		foreach ($value as $val) $return->add($this->getSingleValue($field,$val));
 		return $return;
@@ -279,7 +274,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		}
 		return $return;
     }
-
+	
 	public function ___getConfigInputfields(Field $field) {
 
 		$inputfields = parent::___getConfigInputfields($field);
@@ -289,17 +284,23 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->label = _('Inputfieldtype');
 		$f->attr('name', 'input_type');
 		$f->attr('value', $field->input_type);
-		$f->description = $this->_('Select the type of inputfield.');
-		$f->addOption(0, 'InputfieldSelect');
-		$f->addOption(1, 'InputfieldRadios');
-		$f->addOption(2, 'InputfieldCheckboxes');
-		$f->addOption(3, 'InputfieldSelectMultiple');
-		$f->addOption(4, 'InputfieldAsmSelect');
+		$f->required = true;
+		$f->description = $this->_('Select the type of Inputfield.');
+		$f->notes = '* ' . $this->_('Types indicated with an asterisk are for multiple selection. Maybe 3rd party Inputfields will not work as expected. Please test carefully.');
+		$f->addOption('InputfieldSelect', 'Select');
+		foreach($this->modules->get("InputfieldPage")->data['inputfieldClasses'] as $class) {
+			$module = $this->modules->get($class);
+			if(is_subclass_of($module, 'InputfieldSelect') && method_exists($class,'___render')) {
+				$label = str_replace("Inputfield", '', $class);
+				if($module instanceof InputfieldHasArrayValue) $label .= "*";
+				$f->addOption($class, $label);
+			}
+		}
 		$inputfields->append($f);
 
 		// create options
 		$fieldset = $this->modules->get("InputfieldFieldset");
-		$fieldset->label = _('Create Options from any Database Table');
+		$fieldset->label = _('Create options from any database table');
 		$fieldset->notes = _("Save after selecting 'Source Table' to populate the appropriate select for 'Option Label' and 'Option Value'. Make a selection and save again.");
 		$inputfields->add($fieldset);
 
@@ -351,6 +352,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$fv=($field->filter_value)?$field->filter_value:'[Value]';
 		$fieldset->notes = _("SELECT * FROM $field->option_table WHERE $fc$fs'$fv'");
 		$fieldset->collapsed = Inputfield::collapsedBlank;
+		$fieldset->showIf = "option_value!=''";
 		$inputfields->add($fieldset);
 
 		// filter column
@@ -381,21 +383,25 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$fieldset->append($f);
 
 		// option orderby
-		$f = $this->modules->get("InputfieldCheckbox");
-		$f->label = _("Order by Label");
+		$f = $this->modules->get("InputfieldSelect");
+		$f->label = _("Order by");
+		$f->description = _("Default: Order by label");
 		$f->attr('name', 'option_order');
-		$f->description = _("Default: Order by value");
-		$f->attr('checked', $field->option_order ? 'checked' : '' );
-		$f->collapsed = Inputfield::collapsedBlank;
+		$f->attr('value', $field->option_order);
+		if ($columns) foreach ($columns as $ordercol) $f->addOption($ordercol, $ordercol);
+		$f->collapsed = Inputfield::collapsedYes;
+		$f->showIf = "option_value!=''";
 		$inputfields->append($f);
 
 		// option order asc/ desc
-		$f = $this->modules->get("InputfieldCheckbox");
-		$f->label = _("Order Descending");
+		$f = $this->modules->get("InputfieldRadios");
+		$f->label = _("Order Direction");
 		$f->attr('name', 'option_asc');
-		$f->description = _("Default: Ascending");
-		$f->attr('checked', $field->option_asc ? 'checked' : '' );
-		$f->collapsed = Inputfield::collapsedBlank;
+		($field->option_asc)?$f->attr('value', $field->option_asc):$f->attr('value', 0);
+		$f->addOption(0,"Ascending");
+		$f->addOption(1,"Descending");
+		$f->collapsed = Inputfield::collapsedYes;
+		$f->showIf = "option_value!=''";
 		$inputfields->append($f);
 
 		return $inputfields;
