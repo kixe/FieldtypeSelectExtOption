@@ -40,7 +40,7 @@ Default Value or Value if nothing selected is always the first column of the tab
     
     *note: Option will overwrite the preceding option with same value while generating the select. Unique values recommended.*
 
-+ #### Option Label
++ #### Option Label ####
 Select a column of the source datatable to get the label for the option tag.  
     &lt;option&gt;**Option Label**&lt;/option&gt;  
 All types allowed.
