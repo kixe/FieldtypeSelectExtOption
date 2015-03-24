@@ -25,7 +25,8 @@ Fieldtype **SelectExtOption** is compatible with the following Inputfieldtypes.
  + InputfieldAsmSelect
 
  InputfieldAsmSelect selections are sortable.
- 3d party modules maybe supported too. Have a look here: [**Developers Note**](#extopt_devnote).
+ 3d party modules maybe supported too.  
+ Have a look here: [**Developers Note**](#extopt_devnote).
 
 + #### Source Table
 Choose any datatable in the database including those which are not depending to Processwire. 
