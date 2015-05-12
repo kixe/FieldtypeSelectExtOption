@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
- * v 1.1.0 22.03.15
+ * v 1.1.1 12.05.15
  * 
  * ProcessWire 2.x 
  * Copyright (C) 2013 by Ryan Cramer 
@@ -28,7 +28,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 110,
+			'version' => 111,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in the database. Define the source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -109,7 +109,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		 */
      	$this->addHookBefore($class.'::render', function($event) {
    		$field = $event->object->name;
-		   	$object = $this->page->$field;
+   			$extopt = wire('modules')->get('FieldtypeSelectExtOption');
+		   	$object = $extopt->page->$field;
 			if ($object instanceof SelectExtOption) $event->object->setAttribute('value',$object->value);
 			if ($object instanceof WireArray && $object->first() instanceof SelectExtOption) {
 				$attrValue = array();
