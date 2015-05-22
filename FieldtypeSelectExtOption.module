@@ -28,7 +28,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 111,
+			'version' => 112,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in the database. Define the source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -211,7 +211,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$order = $this->database->escapeCol($order);
 		// validate/sanitize filterstring
 		$filter = ($filter)?"WHERE $filter":'';
-		$query = $this->database->prepare("SELECT * FROM `$table` $filter ORDER BY $order $dir");
+		$query = $this->database->prepare("SELECT * FROM `$table` $filter ORDER BY `$order` $dir");
 		$query->execute();
 		if(!$query->rowCount()) return null;
         while($row = $query->fetch(PDO::FETCH_ASSOC)) $options[$row[$value]] = $row[$label];
@@ -225,7 +225,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$operators = array(' LIKE ',' NOT LIKE ');
 		if(!$this->database->isOperator($field->filter_selector) && !in_array($field->filter_selector,$operators))  return false;
 		// escape column, quote value
-		return $this->database->escapeCol($field->filter_column).$field->filter_selector.$this->database->quote($field->filter_value);
+		return '`'.$this->database->escapeCol($field->filter_column).'`'.$field->filter_selector.$this->database->quote($field->filter_value);
 	}
 
 	public function getBlankValue(Page $page, Field $field) {
