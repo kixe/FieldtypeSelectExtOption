@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
- * v 1.1.0 22.03.15
+ * v 1.1.3 16.09.15
  * 
  * ProcessWire 2.x 
  * Copyright (C) 2013 by Ryan Cramer 
@@ -28,7 +28,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 110,
+			'version' => 113,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in the database. Define the source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -68,6 +68,14 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		return $query->fetch(); // single return, unique value
 	}
 
+	/**
+	 * Access to all column values of the selected row/rows.
+	 *
+	 * @param string fieldname, default: first field in page of type SelectExtOption
+	 * @param selector string  to get a page, default: current page
+	 * @return assoc array
+	 *
+	 */
 	public function row($name = null, $selector = null) {
 		$return = array();
 		$n = $name;
@@ -101,31 +109,15 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// prevent frontend error
 		$class = ($field->input_type)?$field->input_type:'InputfieldSelect';
 
-		/**
-		 * Hook prevents object to string conversion in Class InputfieldSelect.
-		 * 
-		 * @return int/ array
-		 *
-		 */
-     	$this->addHookBefore($class.'::render', function($event) {
-   		$field = $event->object->name;
-		   	$object = $this->page->$field;
-			if ($object instanceof SelectExtOption) $event->object->setAttribute('value',$object->value);
-			if ($object instanceof WireArray && $object->first() instanceof SelectExtOption) {
-				$attrValue = array();
-				foreach ($object as $value) $attrValue[] = $value->value;
-				$event->object->setAttribute('value',$attrValue);
-			}
-    	});
-    	
 		$inputfield = $this->modules->get($class);
 
 		// get the options array
 		$options = $this->getExtOptions($field->option_table,$field->option_value,$field->option_label,$this->filter($field),$field->option_order,$field->option_asc);
 		$options = ($options)?$options:array(0 => 'no data');
 
-		foreach($options as $optval => $label) {			
-			$inputfield->addOption($optval,$label);
+		foreach($options as $optval => $label) {
+			$attributes = ($v == $optval)?array('selected'=>'selected'):null;
+			$inputfield->addOption($optval,$label,$attributes);
 		}
 		return $inputfield;
 	}
@@ -210,21 +202,21 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$order = $this->database->escapeCol($order);
 		// validate/sanitize filterstring
 		$filter = ($filter)?"WHERE $filter":'';
-		$query = $this->database->prepare("SELECT * FROM `$table` $filter ORDER BY $order $dir");
+		$query = $this->database->prepare("SELECT * FROM `$table` $filter ORDER BY `$order` $dir");
 		$query->execute();
 		if(!$query->rowCount()) return null;
         while($row = $query->fetch(PDO::FETCH_ASSOC)) $options[$row[$value]] = $row[$label];
         return $options;
 	}
 
-	protected function filter(Field $field) {
+	protected function ___filter(Field $field) {
 		// all parts set?
 		if(!$field->filter_column||!$field->filter_selector||!$field->filter_value) return false;
 		// valid operator?
 		$operators = array(' LIKE ',' NOT LIKE ');
 		if(!$this->database->isOperator($field->filter_selector) && !in_array($field->filter_selector,$operators))  return false;
-		// escape column, quote value
-		return $this->database->escapeCol($field->filter_column).$field->filter_selector.$this->database->quote($field->filter_value);
+		// escape column, quote value,
+		return '`'.$this->database->escapeCol($field->filter_column).'`'.$field->filter_selector.$this->database->quote($field->filter_value);
 	}
 
 	public function getBlankValue(Page $page, Field $field) {
@@ -235,12 +227,15 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$new = new SelectExtOption();
 		$new->value = ($value !== null)?(int)$value:null;	
 		$row = $this->getTableRow($field,$new->value);
-		if ($row) {
-			$new->label = $field->option_label?$row[$field->option_label]:array_pop($row);
-			$new->row = $this->getTableRow($field,$new->value);
-			return $new;
+		if (!$row) return new SelectExtOption();
+		foreach ($row as $key => $value) {
+			// skip reserved words
+			if (in_array($key,array('value','label','row','data'))) continue;
+			$new->set($key,$value);
 		}
-		return new SelectExtOption();
+		$new->label = $field->option_label?$row[$field->option_label]:array_pop($row);
+		$new->row = $this->getTableRow($field,$new->value);
+		return $new;
 	}
 
 	public function sanitizeValue(Page $page, Field $field, $value) {
@@ -278,6 +273,17 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public function ___getConfigInputfields(Field $field) {
 
 		$inputfields = parent::___getConfigInputfields($field);
+
+		// usage
+		$markup = file_exists(dirname(__FILE__) . '/README.md')?file_get_contents(dirname(__FILE__) . '/README.md'):null;
+		if (strlen($markup)) {
+			$f = $this->modules->get("InputfieldMarkup");
+			$f->label = _('Usage (shows complete README)');
+			$f->markupText = $markup;
+			$f->set('textformatters',array('TextformatterMarkdownExtra'));
+			$f->collapsed = Inputfield::collapsedYes;
+			$inputfields->append($f);
+		}
 
 		// choose inputfieldtype
 		$f = $this->modules->get('InputfieldSelect');
@@ -417,11 +423,12 @@ class SelectExtOption extends WireData {
 	public function __construct() {
 		$this->set('value', null);
 		$this->set('label', null);
-		$this->set('row', array()); // TODO subclass with datatable column as properties. Problem: 'data' protected in WireData
+		$this->set('row', array());
 	}
 
 	public function set($key, $value) {
-		if($key == 'value' || $key == 'label' || $key == 'row') {
+		if(in_array($key,array('value','label','row','data'))) {
+			if($key == 'data') throw new WireException("'data' property is reserved by WireData class. (array where get/set properties are stored)");
 			// validation of label ? 
 			if($key == 'value' && !is_null($value) && !is_int($value)) throw new WireException("SelectExtOption object only accepts integer (int) as value property");
 			if($key == 'row' && !is_array($value)) throw new WireException("SelectExtOption object only accepts arrays as row property");
@@ -432,4 +439,9 @@ class SelectExtOption extends WireData {
 	public function get($key) {
 		return parent::get($key);
 	}
+
+	// magic patch by teppo replaces hook
+	public function __toString() {
+		return (string) $this->value;
+    }
 }

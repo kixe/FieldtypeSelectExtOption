@@ -26,7 +26,7 @@ Fieldtype **SelectExtOption** is compatible with the following Inputfieldtypes.
 
  InputfieldAsmSelect selections are sortable.
  3d party modules maybe supported too.  
- Have a look here: [**Developers Note**](#extopt_devnote).
+ Have a look here: [**Developers Note**](#devnote).
 
 + #### Source Table
 Choose any datatable in the database including those which are not depending to Processwire. 
@@ -48,7 +48,7 @@ Default Value or Value if nothing selected same as **Option Value**.
 
 + #### Filter
 Small Filter to limit the options if needed. Adds a **WHERE** condition to the **SELECT** statement 
-which pulls the options from the datatable.
+which pulls the options from the datatable. 
 
 + #### Order by Label
 Options are ordered by **Option Value**. Check to order by **Option Label**. 
@@ -64,6 +64,9 @@ Complete access to the belonging row of the selected sourcetable in the database
 ## API 
 *note: Access possible to every table in the database, not only PW-Tables or PW-Fields.*
 
+Since Version 1.1.3 all column values are accessible as a property. Except values of columns 
+named with reserved words ('label', 'value', 'row' and 'data'). 
+
 ### Access via $page->[fieldname] 
 *note: Throws an error notice or fatal error trying to access non existing values.*
 
@@ -71,13 +74,15 @@ Complete access to the belonging row of the selected sourcetable in the database
 
 /** single values (InputfieldSelect)
  *
- * @return WireData Object
+ * @return SelectExtOption Object (extended WireData Object)
  *
  **/
  
 $page->myfield->value
 $page->myfield->label
 $page->myfield->row // associative array of all values of the selected datatablerow
+$page->myfield->columnname-1
+$page->myfield->columnname-2 // ...
 
 /** muliple values (InputfiedSelectMultiple, InputfieldAsmSelect)
  *
@@ -171,12 +176,16 @@ array (size=2)
 
 ```
 
-## Developers Note <a id="extopt_devnote"></a>
+## Developers Note<a id="devnote"></a>
 3d party Inputfieldtypes are supported too, if they are subclasses of **InputfieldSelect**
 and have a hookable render() method. Furthermore they should be added in settings of **InputfieldPage** module.
 No guarantees that these Inputfieldtypes will work as expected.
 Please test carefully.  
 Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules/inputfield-chosen-select/).
+
+function filter() is hookable since version 1.1.3
+filter() returns the WHERE clause which will be added to the SELECT command. You can specify more than one conditions 
+using AND or OR operators.
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
