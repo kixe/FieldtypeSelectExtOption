@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
- * v 1.1.3 16.09.15
+ * v 1.1.4 17.09.15
  * 
  * ProcessWire 2.x 
  * Copyright (C) 2013 by Ryan Cramer 
@@ -28,7 +28,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 113,
+			'version' => 114,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in the database. Define the source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -65,7 +65,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		
 		$query = $this->database->query($sql);
 		if(!$query->rowCount()) return array();
-		return $query->fetch(); // single return, unique value
+		return $query->fetch(PDO::FETCH_ASSOC); // single return, unique value
 	}
 
 	/**
@@ -233,7 +233,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			if (in_array($key,array('value','label','row','data'))) continue;
 			$new->set($key,$value);
 		}
-		$new->label = $field->option_label?$row[$field->option_label]:array_pop($row);
+		$new->label = $field->option_label?$row[$field->option_label]:reset($row);
 		$new->row = $this->getTableRow($field,$new->value);
 		return $new;
 	}
@@ -419,6 +419,12 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 *
 */
 class SelectExtOption extends WireData {
+
+	/**
+	 * Array where get/set properties are stored
+	 *
+	 */
+	protected $data = array(); 
 
 	public function __construct() {
 		$this->set('value', null);
