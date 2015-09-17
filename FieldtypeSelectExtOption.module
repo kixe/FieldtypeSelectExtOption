@@ -276,7 +276,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// usage
 		$markup = file_exists(dirname(__FILE__) . '/README.md')?file_get_contents(dirname(__FILE__) . '/README.md'):null;
-		if (strlen($markup)) {
+		if ($markup) {
 			$f = $this->modules->get("InputfieldMarkup");
 			$f->label = _('Usage (shows complete README)');
 			$f->markupText = $markup;
