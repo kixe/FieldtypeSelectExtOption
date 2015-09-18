@@ -278,9 +278,10 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$markup = file_exists(dirname(__FILE__) . '/README.md')?file_get_contents(dirname(__FILE__) . '/README.md'):null;
 		if ($markup) {
 			$f = $this->modules->get("InputfieldMarkup");
-			$f->label = _('Usage (shows complete README)');
-			$f->markupText = $markup;
-			$f->set('textformatters',array('TextformatterMarkdownExtra'));
+			$f->label = _('Usage');
+			// call textformatter before wrapping
+			$this->modules->get('TextformatterMarkdownExtra')->format($markup); 
+			$f->markupText = "<div style=\"padding:0 16px; border-left: 16px solid #29c4bc;\"><strong>README.md</strong><hr/>$markup</div>";
 			$f->collapsed = Inputfield::collapsedYes;
 			$inputfields->append($f);
 		}
@@ -296,7 +297,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->addOption('InputfieldSelect', 'Select');
 		foreach($this->modules->get("InputfieldPage")->data['inputfieldClasses'] as $class) {
 			$module = $this->modules->get($class);
-			if(is_subclass_of($module, 'InputfieldSelect') && method_exists($class,'___render')) {
+			if(is_subclass_of($module, 'InputfieldSelect')) {
 				$label = str_replace("Inputfield", '', $class);
 				if($module instanceof InputfieldHasArrayValue) $label .= "*";
 				$f->addOption($class, $label);
