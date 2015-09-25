@@ -28,7 +28,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 114,
+			'version' => 115,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in the database. Define the source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -233,8 +233,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			if (in_array($key,array('value','label','row','data'))) continue;
 			$new->set($key,$value);
 		}
+		$new->row = $row;
 		$new->label = $field->option_label?$row[$field->option_label]:reset($row);
-		$new->row = $this->getTableRow($field,$new->value);
 		return $new;
 	}
 
@@ -253,7 +253,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$module = $this->modules->get($field->input_type);
 		if(!$module instanceof InputfieldHasArrayValue) return $this->getSingleValue($field,array_pop($value));
 		$return = new WireArray();
-		foreach ($value as $val) $return->add($this->getSingleValue($field,$val));
+		foreach ($value as $val) $return->set($val,$this->getSingleValue($field,$val));
 		return $return;
     }
 
