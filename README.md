@@ -10,7 +10,7 @@ Access to all values in the corresponding row of the source table via API. Front
 ## Create a new field
 + # Step 1: Create a new field select fieldtype **SelectExtOption**.
 + # Step 2: Define options under tab **Details**
-+ # Step 3: Save. Done! ![:-)](https://github.com/tonk/markdown/blob/master/smilies/smiley.gif)
++ # Step 3: Save. Done! ![:-)](data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGJhc2VQcm9maWxlPSJmdWxsIiB4bWxuczpldj0iaHR0cDovL3d3dy53My5vcmcvMjAwMS94bWwtZXZlbnRzIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0IiB6b29tQW5kUGFuPSJtYWduaWZ5IiB2aWV3Qm94PSItMjEgLTIxIDQyIDQyIiB3aWR0aD0iMjUiIGhlaWdodD0iMjUiPjwhLS0gaHR0cHM6Ly91cGxvYWQud2lraW1lZGlhLm9yZy93aWtpcGVkaWEvY29tbW9ucy84Lzg1L1NtaWxleS5zdmctLT48ZGVmcz48cmFkaWFsR3JhZGllbnQgaWQ9InNoaW5lIiBjeD0iLjIiIGN5PSIuMiIgcj0iLjUiIGZ4PSIuMiIgZnk9Ii4yIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IndoaXRlIiBzdG9wLW9wYWNpdHk9Ii43Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSJ3aGl0ZSIgc3RvcC1vcGFjaXR5PSIwIi8+PC9yYWRpYWxHcmFkaWVudD48cmFkaWFsR3JhZGllbnQgaWQ9ImdyYWQiIGN4PSIuNSIgY3k9Ii41IiByPSIuNSIgPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0ieWVsbG93Ii8+PHN0b3Agb2Zmc2V0PSIuNzUiIHN0b3AtY29sb3I9InllbGxvdyIvPjxzdG9wIG9mZnNldD0iLjk1IiBzdG9wLWNvbG9yPSIjZWUwIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZThlODAwIi8+PC9yYWRpYWxHcmFkaWVudD48L2RlZnM+PGNpcmNsZSByPSIyMCIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLXdpZHRoPSIuMTUiIGZpbGw9InVybCgjZ3JhZCkiLz48Y2lyY2xlIHI9IjIwIiBmaWxsPSJ1cmwoI3NoaW5lKSIvPjxnIGlkPSJyaWdodCI+PGVsbGlwc2Ugcng9IjIuNSIgcnk9IjQiIGN4PSItNiIgY3k9Ii03IiBmaWxsPSJibGFjayIvPjxwYXRoIGZpbGw9Im5vbmUiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZD0iTSAxMC42LDIuNyBhIDQsNCwwIDAsMCA0LDMiLz48L2c+PHVzZSB4bGluazpocmVmPSIjcmlnaHQiIHRyYW5zZm9ybT0ic2NhbGUoLTEsMSkiLz48cGF0aCBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9Ii43NSIgZD0iTSAtMTIsNSBBIDEzLjUsMTMuNSwwIDAsMCAxMiw1IEEgMTMsMTMsMCAwLDEgLTEyLDUiLz48L3N2Zz4=)
 
 ## Settings
 ![Screenshot](https://raw.githubusercontent.com/kixe/FieldtypeSelectExtOption/master/screenshot.jpg)
@@ -48,7 +48,7 @@ Default Value or Value if nothing selected same as **Option Value**.
 
 + #### Filter
 Small Filter to limit the options if needed. Adds a **WHERE** condition to the **SELECT** statement 
-which pulls the options from the datatable.
+which pulls the options from the datatable. 
 
 + #### Order by Label
 Options are ordered by **Option Value**. Check to order by **Option Label**. 
@@ -64,6 +64,9 @@ Complete access to the belonging row of the selected sourcetable in the database
 ## API 
 *note: Access possible to every table in the database, not only PW-Tables or PW-Fields.*
 
+Since Version 1.1.3 all column values are accessible as a property. Except values of columns 
+named with reserved words ('label', 'value', 'row' and 'data'). 
+
 ### Access via $page->[fieldname] 
 *note: Throws an error notice or fatal error trying to access non existing values.*
 
@@ -71,13 +74,15 @@ Complete access to the belonging row of the selected sourcetable in the database
 
 /** single values (InputfieldSelect)
  *
- * @return WireData Object
+ * @return SelectExtOption Object (extended WireData Object)
  *
  **/
  
 $page->myfield->value
 $page->myfield->label
 $page->myfield->row // associative array of all values of the selected datatablerow
+$page->myfield->columnname-1
+$page->myfield->columnname-2 // ...
 
 /** muliple values (InputfiedSelectMultiple, InputfieldAsmSelect)
  *
@@ -106,6 +111,9 @@ $page->myfield->eq(3)->value
 
 // call the module
 $getdata = $modules->get('FieldtypeSelectExtOption')
+
+// array of all possible value/ label pairs version >= 1.1.6 
+$getdata->options();
 
 // will find the first or only field of type SelectExtOption in current page
 $getdata->row();
@@ -171,6 +179,37 @@ array (size=2)
 
 ```
 
+<<<<<<< HEAD
+=======
+### How to set a field value via API?
+
+```
+
+/* Inputfieldtype Select */
+$page->of(false);
+$page->myfield->value = 3;
+$page->save('myfield');
+
+
+/* Inputfieldtype SelectMultiple (add a single value) */
+$v = new SelectExtOption;
+$v->value = 3;
+$page->of(false);
+$page->myfield->add($v);
+$page->save('myfield');
+
+
+/* Inputfieldtype Select/SelectMultiple. Will replace existing values */
+$page->of(false);
+$page->myfield = array(3,7,9); // Example Values
+$page->save('myfield');
+
+```
+
+*trying to set a not existing value will be ignored*
+
+
+>>>>>>> dev
 ## Developers Note<a id="devnote"></a>
 3d party Inputfieldtypes are supported too, if they are subclasses of **InputfieldSelect**
 and have a hookable render() method. Furthermore they should be added in settings of **InputfieldPage** module.
@@ -178,6 +217,15 @@ No guarantees that these Inputfieldtypes will work as expected.
 Please test carefully.  
 Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules/inputfield-chosen-select/).
 
+<<<<<<< HEAD
+=======
+function filter() is hookable since version 1.1.3
+filter() returns the WHERE clause which will be added to the SELECT command. You can specify more than one condition
+using AND or OR operators.
+
+new function options() to get the array of all possible value/label pairs since version 1.1.6
+
+>>>>>>> dev
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
 + [Project Page github.com](https://github.com/kixe/FieldtypeSelectExtOption)
