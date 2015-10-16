@@ -11,11 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
-<<<<<<< HEAD
- * v 1.1.1 12.05.15
-=======
- * v 1.1.4 17.09.15
->>>>>>> dev
+ * v 1.1.6 16.10.15
  * 
  * ProcessWire 2.x 
  * Copyright (C) 2013 by Ryan Cramer 
@@ -32,11 +28,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-<<<<<<< HEAD
-			'version' => 112,
-=======
 			'version' => 116,
->>>>>>> dev
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in the database. Define the source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -117,27 +109,6 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// prevent frontend error
 		$class = ($field->input_type)?$field->input_type:'InputfieldSelect';
 
-<<<<<<< HEAD
-		/**
-		 * Hook prevents object to string conversion in Class InputfieldSelect.
-		 * 
-		 * @return int/ array
-		 *
-		 */
-     	$this->addHookBefore($class.'::render', function($event) {
-   		$field = $event->object->name;
-   			$extopt = wire('modules')->get('FieldtypeSelectExtOption');
-		   	$object = $extopt->page->$field;
-			if ($object instanceof SelectExtOption) $event->object->setAttribute('value',$object->value);
-			if ($object instanceof WireArray && $object->first() instanceof SelectExtOption) {
-				$attrValue = array();
-				foreach ($object as $value) $attrValue[] = $value->value;
-				$event->object->setAttribute('value',$attrValue);
-			}
-    	});
-    	
-=======
->>>>>>> dev
 		$inputfield = $this->modules->get($class);
 
 		// get the options array
@@ -264,11 +235,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// valid operator?
 		$operators = array(' LIKE ',' NOT LIKE ');
 		if(!$this->database->isOperator($field->filter_selector) && !in_array($field->filter_selector,$operators))  return false;
-<<<<<<< HEAD
-		// escape column, quote value
-=======
 		// escape column, quote value,
->>>>>>> dev
 		return '`'.$this->database->escapeCol($field->filter_column).'`'.$field->filter_selector.$this->database->quote($field->filter_value);
 	}
 
@@ -350,11 +317,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->addOption('InputfieldSelect', 'Select');
 		foreach($this->modules->get("InputfieldPage")->data['inputfieldClasses'] as $class) {
 			$module = $this->modules->get($class);
-<<<<<<< HEAD
-			if(is_subclass_of($module, 'InputfieldSelect') && method_exists($class,'___render')) {
-=======
 			if(is_subclass_of($module, 'InputfieldSelect')) {
->>>>>>> dev
 				$label = str_replace("Inputfield", '', $class);
 				if($module instanceof InputfieldHasArrayValue) $label .= "*";
 				$f->addOption($class, $label);
