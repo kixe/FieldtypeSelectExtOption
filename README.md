@@ -179,8 +179,6 @@ array (size=2)
 
 ```
 
-<<<<<<< HEAD
-=======
 ### How to set a field value via API?
 
 ```
@@ -209,7 +207,6 @@ $page->save('myfield');
 *trying to set a not existing value will be ignored*
 
 
->>>>>>> dev
 ## Developers Note<a id="devnote"></a>
 3d party Inputfieldtypes are supported too, if they are subclasses of **InputfieldSelect**
 and have a hookable render() method. Furthermore they should be added in settings of **InputfieldPage** module.
@@ -217,15 +214,12 @@ No guarantees that these Inputfieldtypes will work as expected.
 Please test carefully.  
 Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules/inputfield-chosen-select/).
 
-<<<<<<< HEAD
-=======
 function filter() is hookable since version 1.1.3
 filter() returns the WHERE clause which will be added to the SELECT command. You can specify more than one condition
 using AND or OR operators.
 
 new function options() to get the array of all possible value/label pairs since version 1.1.6
 
->>>>>>> dev
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
 + [Project Page github.com](https://github.com/kixe/FieldtypeSelectExtOption)
