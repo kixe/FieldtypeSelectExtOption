@@ -112,6 +112,9 @@ $page->myfield->eq(3)->value
 // call the module
 $getdata = $modules->get('FieldtypeSelectExtOption')
 
+// array of all possible value/ label pairs version >= 1.1.6 
+$getdata->options();
+
 // will find the first or only field of type SelectExtOption in current page
 $getdata->row();
 
@@ -176,6 +179,34 @@ array (size=2)
 
 ```
 
+### How to set a field value via API?
+
+```
+
+/* Inputfieldtype Select */
+$page->of(false);
+$page->myfield->value = 3;
+$page->save('myfield');
+
+
+/* Inputfieldtype SelectMultiple (add a single value) */
+$v = new SelectExtOption;
+$v->value = 3;
+$page->of(false);
+$page->myfield->add($v);
+$page->save('myfield');
+
+
+/* Inputfieldtype Select/SelectMultiple. Will replace existing values */
+$page->of(false);
+$page->myfield = array(3,7,9); // Example Values
+$page->save('myfield');
+
+```
+
+*trying to set a not existing value will be ignored*
+
+
 ## Developers Note<a id="devnote"></a>
 3d party Inputfieldtypes are supported too, if they are subclasses of **InputfieldSelect**
 and have a hookable render() method. Furthermore they should be added in settings of **InputfieldPage** module.
@@ -184,8 +215,10 @@ Please test carefully.
 Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules/inputfield-chosen-select/).
 
 function filter() is hookable since version 1.1.3
-filter() returns the WHERE clause which will be added to the SELECT command. You can specify more than one conditions 
+filter() returns the WHERE clause which will be added to the SELECT command. You can specify more than one condition
 using AND or OR operators.
+
+new function options() to get the array of all possible value/label pairs since version 1.1.6
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)

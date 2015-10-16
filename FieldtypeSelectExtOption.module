@@ -28,7 +28,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 115,
+			'version' => 116,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in the database. Define the source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -72,7 +72,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 * Access to all column values of the selected row/rows.
 	 *
 	 * @param string fieldname, default: first field in page of type SelectExtOption
-	 * @param selector string  to get a page, default: current page
+	 * @param selector string to get a page, default: current page
 	 * @return assoc array
 	 *
 	 */
@@ -112,8 +112,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$inputfield = $this->modules->get($class);
 
 		// get the options array
-		$options = $this->getExtOptions($field->option_table,$field->option_value,$field->option_label,$this->filter($field),$field->option_order,$field->option_asc);
-		$options = ($options)?$options:array(0 => 'no data');
+		$options = $this->options($field);
 
 		foreach($options as $optval => $label) {
 			$attributes = ($v == $optval)?array('selected'=>'selected'):null;
@@ -162,6 +161,27 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		if(!$query->rowCount()) return null;
 		foreach($query->fetchAll() as $type) if(strpos($type[0],'int') !== false) return true;
 		return false;
+	}
+
+	/**
+	 * Return array of all selectable options, key ≈ (int)optionvalue, value ≈ optionlabel
+	 *
+	 * @param string/int/null/object field
+	 * @return array
+	 *
+	 */
+	public function options($field = null) {
+		if (!$field instanceof Field) {
+			if (is_int($field)) $selector = ",id=$field";
+			elseif (is_string($field)) $selector = ",name=$field";
+			$_field = $field;
+			$field = wire('fields')->get('type=FieldtypeSelectExtOption'.$selector);
+			if (!$field) throw new WireException("Field [$_field] doesn't exist or is not of type FieldtypeSelectExtOption!");
+		}
+		elseif ($field->type != 'FieldtypeSelectExtOption') throw new WireException("Expecting FieldtypeSelectExtOption");
+		// create options array
+		$options = $this->getExtOptions($field->option_table,$field->option_value,$field->option_label,$this->filter($field),$field->option_order,$field->option_asc);
+		return ($options)?$options:array(0 => 'no data');
 	}
 
 	/**
@@ -425,7 +445,7 @@ class SelectExtOption extends WireData {
 	 * Array where get/set properties are stored
 	 *
 	 */
-	protected $data = array(); 
+	protected $data = array();
 
 	public function __construct() {
 		$this->set('value', null);
