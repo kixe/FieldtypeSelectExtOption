@@ -6,6 +6,8 @@ Define the source table, columns (to pull value & label) and the preferred Input
 Access to all values in the corresponding row of the source table via API. Frontend safe.
 
 ## Installation
+There are multiple ways to install a module.  
+[Learn more](http://modules.processwire.com/install-uninstall/).  
 
 ## Create a new field
 + # Step 1: Create a new field select fieldtype **SelectExtOption**.
