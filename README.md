@@ -119,7 +119,9 @@ $page->save('myfield');
 
 ```
 
-*trying to set a not existing value will be ignored*### public module functions options() and row()
+*trying to set a not existing value will be ignored*
+
+### public module functions options() and row()
 
 ```
 
