@@ -23,6 +23,7 @@ Fieldtype **SelectExtOption** is compatible with the following Inputfieldtypes.
  + InputfieldCheckboxes
  + InputfieldSelectMultiple
  + InputfieldAsmSelect
+ + InputfieldSelectMultipleTransfer
 
  InputfieldAsmSelect selections are sortable.
  3d party modules maybe supported too.  
@@ -121,7 +122,7 @@ $page->save('myfield');
 
 *trying to set a not existing value will be ignored*
 
-### public module functions options() and row()
+### Public module functions options() and row()
 
 ```
 
@@ -145,7 +146,8 @@ $getdata->row(null,'selectorstring');
 
 ```
 
-Output will be a MultipleArray with the stored value as key.
+Function row() will return a MultipleArray with the stored value as key.
+
 #### Example
 + Field Settings
 
@@ -202,13 +204,15 @@ No guarantees that these Inputfieldtypes will work as expected.
 Please test carefully.  
 Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules/inputfield-chosen-select/).
 
-function filter() is hookable since version 1.1.3
-filter() returns the WHERE clause which will be added to the SELECT command. You can specify more than one condition
-using AND or OR operators.
+InputfieldSelectMultipleTransfer will be supported after removing the '&gt;' in the selector string of javascript file.
+(Line 3 and 19 InputfieldSelectMultipleTransfer.js)
 
-new function options() to get the array of all possible value/label pairs since version 1.1.6
-
-all options provided as property of field value since version 1.1.7
+## Changelog
++ **1.1.3** function filter() is hookable
+   filter() returns the WHERE clause which will be added to the SELECT command.  
+   You can specify more than one condition using AND or OR operators.
++ **1.1.6** function options() to get the array of all possible value/label pairs
++ **1.1.7** all options provided as property
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
