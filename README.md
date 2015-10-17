@@ -5,8 +5,6 @@ Fieldtype which generates the options for a Select Inputfield from *any* table i
 Define the source table, columns (to pull value & label) and the preferred Inputfieldtype (Select, Radios, Checkboxes SelectMultiple or ASMSelect) in field settings.
 Access to all values in the corresponding row of the source table via API. Frontend safe.
 
-## Installation
-
 ## Create a new field
 + # Step 1: Create a new field select fieldtype **SelectExtOption**.
 + # Step 2: Define options under tab **Details**
@@ -23,7 +21,7 @@ Fieldtype **SelectExtOption** is compatible with the following Inputfieldtypes.
  + InputfieldCheckboxes
  + InputfieldSelectMultiple
  + InputfieldAsmSelect
- + InputfieldSelectMultipleTransfer
+ + InputfieldSelectMultipleTransfer [**(note)**](#multitransfer)
 
  InputfieldAsmSelect selections are sortable.
  3d party modules maybe supported too.  
@@ -49,7 +47,7 @@ Default label or label if not selected same as **Option Value**.
 
 + #### Filter
 Small Filter to limit the options if needed. Adds a **WHERE** condition to the **SELECT** statement 
-which pulls the options from the datatable. function filter() is hookable.
+which pulls the options from the datatable. Function filter() is hookable.
 
 + #### Order by Label
 Options are ordered by **Option Label**. Select to order by any other column. 
@@ -120,7 +118,7 @@ $page->save('myfield');
 
 ```
 
-*trying to set a not existing value will be ignored*
+*note: trying to set a not existing value will be ignored*
 
 ### Public module functions options() and row()
 
@@ -204,7 +202,7 @@ No guarantees that these Inputfieldtypes will work as expected.
 Please test carefully.  
 Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules/inputfield-chosen-select/).
 
-InputfieldSelectMultipleTransfer will be supported after removing the '&gt;' in the selector string of javascript file.
+<a id="multitransfer"></a>[InputfieldSelectMultipleTransfer](http://modules.processwire.com/modules/inputfield-select-multiple-transfer/) will be supported after removing the '&gt;' in the selector string of javascript file.
 (Line 3 and 19 InputfieldSelectMultipleTransfer.js)
 
 ## Changelog
