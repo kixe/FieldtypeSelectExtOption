@@ -1,13 +1,11 @@
 FIELDTYPE SELECT EXTERNAL OPTION
 ================================
 
-Fieldtype which generates the options for a Select Inputfield from *any* table in the database.
+Fieldtype which generates the options for a Select Inputfield from *any* table in the database not only PW-Tables or PW-Fields.
 Define the source table, columns (to pull value & label) and the preferred Inputfieldtype (Select, Radios, Checkboxes SelectMultiple or ASMSelect) in field settings.
 Access to all values in the corresponding row of the source table via API. Frontend safe.
 
 ## Installation
-There are multiple ways to install a module.  
-[Learn more](http://modules.processwire.com/install-uninstall/).  
 
 ## Create a new field
 + # Step 1: Create a new field select fieldtype **SelectExtOption**.
@@ -37,7 +35,7 @@ This Field is required.
 + #### Option Value
 Select a column of the source datatable to get the value for the option tag.  
 Only Integer types allowed. (*This Class extends FieldtypeMulti which stores values as int(11)*.)  
-Default Value or Value if nothing selected is always the first column of the table.  
+Default column or column if not selected is always the first column of the table.  
     &lt;option value="**Option Value**" &gt; ...
     
     *note: Option will overwrite the preceding option with same value while generating the select. Unique values recommended.*
@@ -46,76 +44,90 @@ Default Value or Value if nothing selected is always the first column of the tab
 Select a column of the source datatable to get the label for the option tag.  
     &lt;option&gt;**Option Label**&lt;/option&gt;  
 All types allowed.
-Default Value or Value if nothing selected same as **Option Value**.
+Default label or label if not selected same as **Option Value**.
 
 + #### Filter
 Small Filter to limit the options if needed. Adds a **WHERE** condition to the **SELECT** statement 
-which pulls the options from the datatable. 
+which pulls the options from the datatable. function filter() is hookable.
 
 + #### Order by Label
-Options are ordered by **Option Value**. Check to order by **Option Label**. 
+Options are ordered by **Option Label**. Select to order by any other column. 
 
 + #### Order Descending
 Order is Ascending by default. Check to switch to **Descending**
 
-## Value
-Stored value is simply an integer which makes this fieldtype safe for frontend use too.
-Complete access to the belonging row of the selected sourcetable in the database via the following API.
-
 
 ## API 
-*note: Access possible to every table in the database, not only PW-Tables or PW-Fields.*
 
-Since Version 1.1.3 all column values are accessible as a property. Except values of columns 
-named with reserved words ('label', 'value', 'row' and 'data'). 
-
-### Access via $page->[fieldname] 
-*note: Throws an error notice or fatal error trying to access non existing values.*
+### Return a field value: $page->[fieldname]->[property]
+All column values are populated as a property (columnname) except values of columns 
+named with reserved words ('label', 'value', 'row', 'options' and 'data').  
 
 ```
 
-/** single values (InputfieldSelect)
- *
+/** 
+ * single values (InputfieldSelect)
  * @return SelectExtOption Object (extended WireData Object)
  *
  **/
  
 $page->myfield->value
 $page->myfield->label
-$page->myfield->row // associative array of all values of the selected datatablerow
+$page->myfield->row // assoc array (columnname => value) of all values of the selected datatablerow
+$page->myfield->options // assoc array (value => label) of all selectable options
 $page->myfield->columnname-1
 $page->myfield->columnname-2 // ...
 
-/** muliple values (InputfiedSelectMultiple, InputfieldAsmSelect)
- *
- * @return WireArray Object with WireData elements for each single value like above
- *
- **/
-
-// Examples
-$page->myfield->last()->row['land'] // value in datatablerow of the last selection
-$page->myfield->first()->row['id']
-$page->myfield->eq(3)->value
-
-```
-
-### Access via $modules->get('FieldtypeSelectExtOption') 
-*note: Recommended for development to verify Api above. No errors.*
-
-```
-
 /**
- *
- * @return array or multiple array. Elements for each single value like above
- * @return string in case of non existing values
+ * muliple values (InputfiedSelectMultiple, InputfieldAsmSelect)
+ * @return WireArray Object with SelectExtOption elements for each single value like above
  *
  **/
+
+// Usage Examples
+$page->myfield->last()->row['land'] // value of column 'land' of last selected item
+$page->myfield->first()->row['id']
+$page->myfield->eq(3)->value // integer value of 4th item in array of selected items
+$page->myfield->each('pages_id') // array of value of column 'pages\_id' of each item
+
+```
+
+*note: to get the value of a column named by reserved word use the row property, like $page->myfield->row['data']*
+
+### Set a field value
+
+```
+
+/* Inputfieldtype Select */
+$page->of(false);
+$page->myfield->value = 3;
+$page->save('myfield');
+
+
+/* Inputfieldtype SelectMultiple (add a single value) */
+$v = new SelectExtOption;
+$v->value = 3;
+$page->of(false);
+$page->myfield->add($v);
+$page->save('myfield');
+
+
+/* Inputfieldtype Select/SelectMultiple. Will replace existing values */
+$page->of(false);
+$page->myfield = array(3,7,9); // Example Values
+$page->save('myfield');
+
+```
+
+*trying to set a not existing value will be ignored*### public module functions options() and row()
+
+```
 
 // call the module
-$getdata = $modules->get('FieldtypeSelectExtOption')
+$getdata = $modules->get('FieldtypeSelectExtOption');
 
-// array of all possible value/ label pairs version >= 1.1.6 
-$getdata->options();
+// return array of all possible value/ label pairs version >= 1.1.6 
+$getdata->options('selector'); // selector = field-name, field-id or field-instance
 
 // will find the first or only field of type SelectExtOption in current page
 $getdata->row();
@@ -131,7 +143,7 @@ $getdata->row(null,'selectorstring');
 
 ```
 
-Output will be an MultipleArray with the stored value as key.
+Output will be a MultipleArray with the stored value as key.
 #### Example
 + Field Settings
 
@@ -181,34 +193,6 @@ array (size=2)
 
 ```
 
-### How to set a field value via API?
-
-```
-
-/* Inputfieldtype Select */
-$page->of(false);
-$page->myfield->value = 3;
-$page->save('myfield');
-
-
-/* Inputfieldtype SelectMultiple (add a single value) */
-$v = new SelectExtOption;
-$v->value = 3;
-$page->of(false);
-$page->myfield->add($v);
-$page->save('myfield');
-
-
-/* Inputfieldtype Select/SelectMultiple. Will replace existing values */
-$page->of(false);
-$page->myfield = array(3,7,9); // Example Values
-$page->save('myfield');
-
-```
-
-*trying to set a not existing value will be ignored*
-
-
 ## Developers Note<a id="devnote"></a>
 3d party Inputfieldtypes are supported too, if they are subclasses of **InputfieldSelect**
 and have a hookable render() method. Furthermore they should be added in settings of **InputfieldPage** module.
@@ -221,6 +205,8 @@ filter() returns the WHERE clause which will be added to the SELECT command. You
 using AND or OR operators.
 
 new function options() to get the array of all possible value/label pairs since version 1.1.6
+
+all options provided as property of field value since version 1.1.7
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
