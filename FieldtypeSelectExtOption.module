@@ -39,7 +39,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		);
 	}
 	
-    // protected $page;
+	// protected $page;
     	
 	/**
 	 * Get an associative array of all values of the row depending to the selected single value.
@@ -51,18 +51,13 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 */
 	protected function getTableRow(Field $field,$value) {	
 		$table = $field->option_table;
-		if(!$table) {
-			return array();
-        }
+		if(!$table) return array();
 		$columns = $this->getDatabaseColumns($table);
 		$valuecolumn = $field->option_value;
-		if(!in_array($valuecolumn,$columns)) {
-			return array();
-		}
+		if(!in_array($valuecolumn,$columns)) return array();
 		$table = $this->database->escapeTable($table);
 		$value = (int)$value;
 		$sql = "SELECT * FROM `$table` WHERE $valuecolumn = '$value'";
-		
 		$query = $this->database->query($sql);
 		if(!$query->rowCount()) return array();
 		return $query->fetch(PDO::FETCH_ASSOC); // single return, unique value
@@ -104,7 +99,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public function getInputfield(Page $page, Field $field) {
 	
 		// set property
-    	// $this->page = $page;
+    		// $this->page = $page;
 		// get selected values
 		$v = $this->sleepValue($page,$field,$page->$field);
 		// get (set default) name of Inputfieldtype
@@ -269,7 +264,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		return $return;
 	}
 
-    public function wakeupValue(Page $page, Field $field, $value) {
+	public function wakeupValue(Page $page, Field $field, $value) {
 		if(!$value) return $this->getBlankValue($page,$field);
 		$module = $this->modules->get($field->input_type);
 		if(!$module instanceof InputfieldHasArrayValue) return $this->getSingleValue($field,array_pop($value));
@@ -277,9 +272,9 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		foreach ($value as $val) $return->set($val,$this->getSingleValue($field,$val));
 		$return->data('options',$this->options($field));
 		return $return;
-    }
+	}
 
-    public function sleepValue(Page $page, Field $field, $value) {
+	public function sleepValue(Page $page, Field $field, $value) {
 		if($value instanceof SelectExtOption) return ($value->value)?array($value->value):null;
 		$return = array();
 		if($value instanceof WireArray) {
@@ -290,7 +285,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			}
 		}
 		return $return;
-    }
+	}
 	
 	public function ___getConfigInputfields(Field $field) {
 
