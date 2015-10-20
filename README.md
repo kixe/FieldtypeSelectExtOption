@@ -196,8 +196,8 @@ array (size=2)
 ```
 
 ## Developers Note<a id="devnote"></a>
-3d party Inputfieldtypes are supported too, if they are subclasses of **InputfieldSelect**
-and have a hookable render() method. Furthermore they should be added in settings of **InputfieldPage** module.
+3d party Inputfieldtypes are supported too, if they are subclasses of **InputfieldSelect** 
+and have a hookable render() method. Furthermore they should be added in settings of **InputfieldPage** module.  
 No guarantees that these Inputfieldtypes will work as expected.
 Please test carefully.  
 Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules/inputfield-chosen-select/).
@@ -206,9 +206,9 @@ Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules
 (Line 3 and 19 InputfieldSelectMultipleTransfer.js)
 
 ## Changelog
-+ **1.1.3** function filter() is hookable
++ **1.1.3** function filter() is hookable  
    filter() returns the WHERE clause which will be added to the SELECT command.  
-   You can specify more than one condition using AND or OR operators.
+   You can specify more than one condition using AND or OR operators.  
 + **1.1.6** function options() to get the array of all possible value/label pairs
 + **1.1.7** all options provided as property
 
