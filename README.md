@@ -1,14 +1,12 @@
 FIELDTYPE SELECT EXTERNAL OPTION
 ================================
 
-Fieldtype which generates the options for a Select Inputfield from *any* table in the database not only PW-Tables or PW-Fields.
-Define the source table, columns (to pull value & label) and the preferred Inputfieldtype (Select, Radios, Checkboxes SelectMultiple or ASMSelect) in field settings.
-Access to all values in the corresponding row of the source table via API. Frontend safe.
+Fieldtype which generates the options for a Select Inputfield from *any* table in *any* (accessible) database not only PW-Tables or PW-Fields. Define the source table, columns (to pull value & label) and the preferred Inputfieldtype (Select, Radios, Checkboxes SelectMultiple or ASMSelect) in field settings. Access to all values in the corresponding row of the source table via API. Frontend safe.
 
 ## Create a new field
 + # Step 1: Create a new field select fieldtype **SelectExtOption**.
 + # Step 2: Define options under tab **Details**
-+ # Step 3: Save. Done! ![:-)](data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGJhc2VQcm9maWxlPSJmdWxsIiB4bWxuczpldj0iaHR0cDovL3d3dy53My5vcmcvMjAwMS94bWwtZXZlbnRzIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0IiB6b29tQW5kUGFuPSJtYWduaWZ5IiB2aWV3Qm94PSItMjEgLTIxIDQyIDQyIiB3aWR0aD0iMjUiIGhlaWdodD0iMjUiPjwhLS0gaHR0cHM6Ly91cGxvYWQud2lraW1lZGlhLm9yZy93aWtpcGVkaWEvY29tbW9ucy84Lzg1L1NtaWxleS5zdmctLT48ZGVmcz48cmFkaWFsR3JhZGllbnQgaWQ9InNoaW5lIiBjeD0iLjIiIGN5PSIuMiIgcj0iLjUiIGZ4PSIuMiIgZnk9Ii4yIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IndoaXRlIiBzdG9wLW9wYWNpdHk9Ii43Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSJ3aGl0ZSIgc3RvcC1vcGFjaXR5PSIwIi8+PC9yYWRpYWxHcmFkaWVudD48cmFkaWFsR3JhZGllbnQgaWQ9ImdyYWQiIGN4PSIuNSIgY3k9Ii41IiByPSIuNSIgPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0ieWVsbG93Ii8+PHN0b3Agb2Zmc2V0PSIuNzUiIHN0b3AtY29sb3I9InllbGxvdyIvPjxzdG9wIG9mZnNldD0iLjk1IiBzdG9wLWNvbG9yPSIjZWUwIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZThlODAwIi8+PC9yYWRpYWxHcmFkaWVudD48L2RlZnM+PGNpcmNsZSByPSIyMCIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLXdpZHRoPSIuMTUiIGZpbGw9InVybCgjZ3JhZCkiLz48Y2lyY2xlIHI9IjIwIiBmaWxsPSJ1cmwoI3NoaW5lKSIvPjxnIGlkPSJyaWdodCI+PGVsbGlwc2Ugcng9IjIuNSIgcnk9IjQiIGN4PSItNiIgY3k9Ii03IiBmaWxsPSJibGFjayIvPjxwYXRoIGZpbGw9Im5vbmUiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZD0iTSAxMC42LDIuNyBhIDQsNCwwIDAsMCA0LDMiLz48L2c+PHVzZSB4bGluazpocmVmPSIjcmlnaHQiIHRyYW5zZm9ybT0ic2NhbGUoLTEsMSkiLz48cGF0aCBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9Ii43NSIgZD0iTSAtMTIsNSBBIDEzLjUsMTMuNSwwIDAsMCAxMiw1IEEgMTMsMTMsMCAwLDEgLTEyLDUiLz48L3N2Zz4=)
++ # Step 3: Save. Done! ![smile](data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGJhc2VQcm9maWxlPSJmdWxsIiB4bWxuczpldj0iaHR0cDovL3d3dy53My5vcmcvMjAwMS94bWwtZXZlbnRzIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0IiB6b29tQW5kUGFuPSJtYWduaWZ5IiB2aWV3Qm94PSItMjEgLTIxIDQyIDQyIiB3aWR0aD0iMjUiIGhlaWdodD0iMjUiPjwhLS0gaHR0cHM6Ly91cGxvYWQud2lraW1lZGlhLm9yZy93aWtpcGVkaWEvY29tbW9ucy84Lzg1L1NtaWxleS5zdmctLT48ZGVmcz48cmFkaWFsR3JhZGllbnQgaWQ9InNoaW5lIiBjeD0iLjIiIGN5PSIuMiIgcj0iLjUiIGZ4PSIuMiIgZnk9Ii4yIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IndoaXRlIiBzdG9wLW9wYWNpdHk9Ii43Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSJ3aGl0ZSIgc3RvcC1vcGFjaXR5PSIwIi8+PC9yYWRpYWxHcmFkaWVudD48cmFkaWFsR3JhZGllbnQgaWQ9ImdyYWQiIGN4PSIuNSIgY3k9Ii41IiByPSIuNSIgPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0ieWVsbG93Ii8+PHN0b3Agb2Zmc2V0PSIuNzUiIHN0b3AtY29sb3I9InllbGxvdyIvPjxzdG9wIG9mZnNldD0iLjk1IiBzdG9wLWNvbG9yPSIjZWUwIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZThlODAwIi8+PC9yYWRpYWxHcmFkaWVudD48L2RlZnM+PGNpcmNsZSByPSIyMCIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLXdpZHRoPSIuMTUiIGZpbGw9InVybCgjZ3JhZCkiLz48Y2lyY2xlIHI9IjIwIiBmaWxsPSJ1cmwoI3NoaW5lKSIvPjxnIGlkPSJyaWdodCI+PGVsbGlwc2Ugcng9IjIuNSIgcnk9IjQiIGN4PSItNiIgY3k9Ii03IiBmaWxsPSJibGFjayIvPjxwYXRoIGZpbGw9Im5vbmUiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZD0iTSAxMC42LDIuNyBhIDQsNCwwIDAsMCA0LDMiLz48L2c+PHVzZSB4bGluazpocmVmPSIjcmlnaHQiIHRyYW5zZm9ybT0ic2NhbGUoLTEsMSkiLz48cGF0aCBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9Ii43NSIgZD0iTSAtMTIsNSBBIDEzLjUsMTMuNSwwIDAsMCAxMiw1IEEgMTMsMTMsMCAwLDEgLTEyLDUiLz48L3N2Zz4=)
 
 ## Settings
 ![Screenshot](https://raw.githubusercontent.com/kixe/FieldtypeSelectExtOption/master/screenshot.jpg)
@@ -196,9 +194,7 @@ array (size=2)
 ```
 
 ## Developers Note<a id="devnote"></a>
-3d party Inputfieldtypes are supported too, if they are subclasses of **InputfieldSelect** 
-and have a hookable render() method. Furthermore they should be added in settings of **InputfieldPage** module.  
-No guarantees that these Inputfieldtypes will work as expected.
+3d party Inputfieldtypes are supported too, if they are subclasses of **InputfieldSelect**. Furthermore they should be added in settings of **InputfieldPage** module. No guarantees that these Inputfieldtypes will work as expected.  
 Please test carefully.  
 Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules/inputfield-chosen-select/).
 
@@ -211,6 +207,7 @@ Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules
    You can specify more than one condition using AND or OR operators.  
 + **1.1.6** function options() to get the array of all possible value/label pairs
 + **1.1.7** all options provided as property
++ **1.1.8** support for other databases and external hosts set in field settings (under development)
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
