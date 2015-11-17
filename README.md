@@ -207,7 +207,7 @@ Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules
    You can specify more than one condition using AND or OR operators.  
 + **1.1.6** function options() to get the array of all possible value/label pairs
 + **1.1.7** all options provided as property
-+ **1.1.8** support for other databases and external hosts set in field settings (under development)
++ **1.1.8** support for other databases and external hosts set in field settings
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
