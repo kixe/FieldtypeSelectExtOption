@@ -1,7 +1,7 @@
 FIELDTYPE SELECT EXTERNAL OPTION
 ================================
 
-Fieldtype which generates the options for a Select Inputfield from *any* table in the database not only PW-Tables or PW-Fields. Define the source table, columns (to pull value & label) and the preferred Inputfieldtype (Select, Radios, Checkboxes SelectMultiple or ASMSelect) in field settings. Access to all values in the corresponding row of the source table via API. Frontend safe.
+Fieldtype which generates the options for a Select Inputfield from *any* table in *any* (accessible) database not only PW-Tables or PW-Fields. Define the source table, columns (to pull value & label) and the preferred Inputfieldtype (Select, Radios, Checkboxes SelectMultiple or ASMSelect) in field settings. Access to all values in the corresponding row of the source table via API. Frontend safe.
 
 ## Create a new field
 + # Step 1: Create a new field select fieldtype **SelectExtOption**.
