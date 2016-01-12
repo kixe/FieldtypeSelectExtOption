@@ -31,7 +31,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 118,
+			'version' => 119,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -349,7 +349,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$markup = file_exists(dirname(__FILE__) . '/README.md')?file_get_contents(dirname(__FILE__) . '/README.md'):null;
 		if ($markup) {
 			$f = $this->modules->get("InputfieldMarkup");
-			$f->label = _('Usage');
+			$f->label = $this->_('Usage');
 			// call textformatter before wrapping
 			$this->modules->get('TextformatterMarkdownExtra')->format($markup); 
 			$f->markupText = "<div style=\"padding:0 16px; border-left: 16px solid #29c4bc;\"><strong>README.md</strong><hr/>$markup</div>";
@@ -359,7 +359,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// choose inputfieldtype
 		$f = $this->modules->get('InputfieldSelect');
-		$f->label = _('Inputfieldtype');
+		$f->label = $this->_('Inputfieldtype');
 		$f->attr('name', 'input_type');
 		$f->attr('value', $field->input_type);
 		$f->required = true;
@@ -378,15 +378,15 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// external Database
 		$fieldset = $this->modules->get("InputfieldFieldset");
-		$fieldset->label = _('External MySQL Database/ Host');
-		$fieldset->description = _("Optionally specify an external MySQL 5.x database. If the database is not accessible for any reason default database will be selected.");
-		$fieldset->notes = _('Incorrect entries in the field \'DB Host\' produce unsightly error messages! Be aware of this.');
+		$fieldset->label = $this->_('External MySQL Database/ Host');
+		$fieldset->description = $this->_("Optionally specify an external MySQL 5.x database. If the database is not accessible for any reason default database will be selected.");
+		$fieldset->notes = $this->_('Incorrect entries in the field \'DB Host\' produce unsightly error messages! Be aware of this.');
 		$fieldset->collapsed = Inputfield::collapsedYes;
 		$inputfields->add($fieldset);
 
 		// DB Name
 		$f = $this->modules->get("InputfieldText");
-		$f->label = _("DB Name");
+		$f->label = $this->_("DB Name");
 		$f->attr('name', 'db_name');
 		$f->attr('value', $field->db_name);
 		$f->columnWidth = 20;
@@ -394,7 +394,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// DB User
 		$f = $this->modules->get("InputfieldText");
-		$f->label = _("DB User");
+		$f->label = $this->_("DB User");
 		$f->attr('name', 'db_user');
 		$f->attr('value', $field->db_user);
 		$f->columnWidth = 20;
@@ -402,7 +402,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// DB Pass
 		$f = $this->modules->get("InputfieldText");
-		$f->label = _("DB Pass");
+		$f->label = $this->_("DB Pass");
 		$f->attr('name', 'db_pass');
 		$f->attr('value', $field->db_pass);
 		$f->columnWidth = 20;
@@ -410,7 +410,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// DB Host
 		$f = $this->modules->get("InputfieldText");
-		$f->label = _("DB Host");
+		$f->label = $this->_("DB Host");
 		$f->attr('name', 'db_host');
 		$host = (isset($field->db_host))?$field->db_host:'localhost';
 		$f->attr('value', $host);
@@ -420,7 +420,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		/*
 		// DB Socket
 		$f = $this->modules->get("InputfieldText");
-		$f->label = _("Socket");
+		$f->label = $this->_("Socket");
 		$f->attr('name', 'db_socket');
 		$f->attr('value', $field->db_socket);
 		$f->columnWidth = 16.666;
@@ -429,7 +429,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// DB Port
 		$f = $this->modules->get("InputfieldText");
-		$f->label = _("DB Port");
+		$f->label = $this->_("DB Port");
 		$f->attr('name', 'db_port');
 		($field->db_port)?$f->attr('value', $field->db_port):wire('config')->dbPort;
 		$f->columnWidth = 20;
@@ -437,30 +437,30 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// create options
 		$fieldset = $this->modules->get("InputfieldFieldset");
-		$fieldset->label = _('Create options from any database table');
-		$fieldset->notes = _("Save after selecting 'Source Table' to populate the appropriate select for 'Option Label' and 'Option Value'. Make a selection and save again.");
+		$fieldset->label = $this->_('Create options from any database table');
+		$fieldset->notes = $this->_("Save after selecting 'Source Table' to populate the appropriate select for 'Option Label' and 'Option Value'. Make a selection and save again.");
 		$inputfields->add($fieldset);
 
 		// source table
 		$f = $this->modules->get("InputfieldSelect");
-		$f->label = _("Source Table");
+		$f->label = $this->_("Source Table");
 		$f->attr('name', 'option_table');
 		$f->required = true;
 		$f->attr('value', $field->option_table);
 		if (!$field->option_table) $f->addOption(null, 'no table selected!',array('selected'=>'selected'));
 		if ($this->getExtOptions($field->option_table) === null && !count($_POST)) $f->error('Table doesn\'t contain any data!');
 		foreach ($this->database->getTables() as $table) $f->addOption($table, $table);
-		$f->description = _("Choose a table in your database.");
+		$f->description = $this->_("Choose a table in your database.");
 		$f->columnWidth = 33;
 		$fieldset->append($f);
 
 		$columns = $this->getDatabaseColumns($field->option_table);
 		// option value column
 		$f = $this->modules->get("InputfieldSelect");
-		$f->label = _("Option Value");
+		$f->label = $this->_("Option Value");
 		$f->attr('name', 'option_value');
 		$f->attr('value', $field->option_value);
-		$f->description = _("Choose an integer type column.");
+		$f->description = $this->_("Choose an integer type column.");
 		if ($columns) foreach ($columns as $value) {
 			if ($this->isIntColumn($field->option_table,$value)) $f->addOption($value, $value);
 		}
@@ -471,10 +471,10 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// option label column
 		$f = $this->modules->get("InputfieldSelect");
-		$f->label = _("Option Label");
+		$f->label = $this->_("Option Label");
 		$f->attr('name', 'option_label');
 		$f->attr('value', $field->option_label);
-		$f->description = _("Choose from all columns.");
+		$f->description = $this->_("Choose from all columns.");
 		if (!$field->option_label) $f->addOption(null, 'no column selected!',array('selected'=>'selected'));
 		if ($columns) foreach ($columns as $label) $f->addOption($label, $label);
 		$f->columnWidth = 33; 
@@ -482,19 +482,19 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// option filter
 		$fieldset = $this->modules->get("InputfieldFieldset");
-		$fieldset->label = _('Filter');
-		$fieldset->description = _("Configure to limit the option list.");
+		$fieldset->label = $this->_('Filter');
+		$fieldset->description = $this->_("Configure to limit the option list.");
 		$fc=($field->filter_column)?$field->filter_column:'[Column]';
 		$fs=($field->filter_selector)?$field->filter_selector:'[Selector Operator]';
 		$fv=($field->filter_value)?$field->filter_value:'[Value]';
-		$fieldset->notes = _("SELECT * FROM $field->option_table WHERE $fc$fs'$fv'");
+		$fieldset->notes = $this->_("SELECT * FROM $field->option_table WHERE $fc$fs'$fv'");
 		$fieldset->collapsed = Inputfield::collapsedBlank;
 		$fieldset->showIf = "option_value!=''";
 		$inputfields->add($fieldset);
 
 		// filter column
 		$f = $this->modules->get("InputfieldSelect");
-		$f->label = _("Column");
+		$f->label = $this->_("Column");
 		$f->attr('name', 'filter_column');
 		$f->attr('value', $field->filter_column);
 		if ($columns) foreach ($columns as $filtercol) $f->addOption($filtercol, $filtercol);
@@ -503,7 +503,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// filter selector
 		$f = $this->modules->get("InputfieldSelect");
-		$f->label = _("Selector Operator");
+		$f->label = $this->_("Selector Operator");
 		$f->attr('name', 'filter_selector');
 		$f->attr('value', $field->filter_selector);
 		$selectors = array('=', '<', '>', '>=', '<=', '<>', '!=', ' LIKE ',' NOT LIKE ');
@@ -513,7 +513,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// filter value
 		$f = $this->modules->get("InputfieldText");
-		$f->label = _("Value");
+		$f->label = $this->_("Value");
 		$f->attr('name', 'filter_value');
 		$f->attr('value', $field->filter_value);
 		$f->columnWidth = 33; 
@@ -521,8 +521,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// option orderby
 		$f = $this->modules->get("InputfieldSelect");
-		$f->label = _("Order by");
-		$f->description = _("Default: Order by label");
+		$f->label = $this->_("Order by");
+		$f->description = $this->_("Default: Order by label");
 		$f->attr('name', 'option_order');
 		$f->attr('value', $field->option_order);
 		if ($columns) foreach ($columns as $ordercol) {
@@ -535,7 +535,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// option order asc/ desc
 		$f = $this->modules->get("InputfieldRadios");
-		$f->label = _("Order Direction");
+		$f->label = $this->_("Order Direction");
 		$f->attr('name', 'option_asc');
 		($field->option_asc)?$f->attr('value', $field->option_asc):$f->attr('value', 0);
 		$f->addOption(0,"Ascending");
