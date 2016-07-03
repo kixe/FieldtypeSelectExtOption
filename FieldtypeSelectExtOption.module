@@ -366,9 +366,9 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->description = $this->_('Select the type of Inputfield.');
 		$f->notes = '* ' . $this->_('Types indicated with an asterisk are for multiple selection. Maybe 3rd party Inputfields will not work as expected. Please test carefully.');
 		$f->addOption('InputfieldSelect', 'Select');
-		foreach($this->modules->get("InputfieldPage")->data['inputfieldClasses'] as $class) {
+		foreach($this->modules->get("InputfieldPage")->inputfieldClasses as $class) {
 			$module = $this->modules->get($class);
-			if(is_subclass_of($module, 'InputfieldSelect')) {
+			if($module instanceof InputfieldSelect) {
 				$label = str_replace("Inputfield", '', $class);
 				if($module instanceof InputfieldHasArrayValue) $label .= "*";
 				$f->addOption($class, $label);
