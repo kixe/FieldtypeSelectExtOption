@@ -12,7 +12,7 @@ Fieldtype which generates the options for a Select Inputfield from *any* table i
 ![Screenshot](https://raw.githubusercontent.com/kixe/FieldtypeSelectExtOption/master/screenshot.jpg)
 
 + #### Inputfieldtype
-Fieldtype **SelectExtOption** is compatible with the following Inputfieldtypes.
+Fieldtype **SelectExtOption** is compatible with the following Inputfieldtypes. You maybe need to adapt InputfieldPage to make all the options available.
 
  + InputfieldSelect
  + InputfieldRadios
@@ -208,6 +208,9 @@ Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules
 + **1.1.6** function options() to get the array of all possible value/label pairs
 + **1.1.7** all options provided as property
 + **1.1.8** support for other databases and external hosts set in field settings
++ **1.1.9** corrected translatable strings
++ **1.2.0** changed Version to make available for PW 3.0
++ **1.2.1** fixed namespace issue (selectable Inputfields)
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
