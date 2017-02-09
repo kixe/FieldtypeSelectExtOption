@@ -53,13 +53,13 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 * 
 	 */
 	protected function setDatabase(Field $field) {
-		if (!$field) $this->database= wire('database');
+		if (!$field) $this->database= $this->wire('database');
 		if (!strlen($field->db_user.$field->db_pass.$field->db_name)) {
-			$this->database = wire('database');
+			$this->database = $this->wire('database');
 			return;
 		}
 		elseif (strlen($field->db_user) == 0 || strlen($field->db_pass) == 0 || strlen($field->db_name) == 0) {
-			$this->database= wire('database');
+			$this->database= $this->wire('database');
 			if (!count($_POST)) $this->error('Setting an external database failed: Missing value/s');
 		}
 		else {
@@ -69,7 +69,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 				$password = $field->db_pass;
 				$name = $field->db_name;
 				$socket = $field->db_socket; 
-				$charset = wire('config')->dbCharset; // charset set in config, don't change here!
+				$charset = $this->wire('config')->dbCharset; // charset set in config, don't change here!
 				$port =  $field->db_port; // default port set in config
 
 				if($socket) {
@@ -84,10 +84,10 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 					PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
 					);
 				$database = new WireDatabasePDO($dsn, $username, $password, $driver_options); 
-				$database->setDebugMode(wire('config')->debug);
+				$database->setDebugMode($this->wire('config')->debug);
 				$this->database = $database;			
 			} catch(Exception $e) {
-				$this->database = wire('database');
+				$this->database = $this->wire('database');
 				if (!count($_POST)) $this->error('Setting an external database failed: '.$e->getMessage());
 				// return $e->getMessage();
 			}
@@ -223,7 +223,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			if (is_int($field)) $selector = ",id=$field";
 			elseif (is_string($field)) $selector = ",name=$field";
 			$_field = $field;
-			$field = wire('fields')->get('type=FieldtypeSelectExtOption'.$selector);
+			$field = $this->wire('fields')->get('type=FieldtypeSelectExtOption'.$selector);
 			if (!$field) throw new WireException("Field '$_field' doesn't exist or is not of type FieldtypeSelectExtOption.");
 		}
 		elseif ($field->type != 'FieldtypeSelectExtOption') throw new WireException("Expecting FieldtypeSelectExtOption.");
@@ -431,7 +431,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f = $this->modules->get("InputfieldText");
 		$f->label = $this->_("DB Port");
 		$f->attr('name', 'db_port');
-		($field->db_port)?$f->attr('value', $field->db_port): wire('config')->dbPort;
+		($field->db_port)? $f->attr('value', $field->db_port) : $this->wire('config')->dbPort;
 		$f->columnWidth = 20;
 		$fieldset->append($f);
 
