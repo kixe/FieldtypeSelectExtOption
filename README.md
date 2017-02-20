@@ -211,6 +211,8 @@ Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules
 + **1.1.9** corrected translatable strings
 + **1.2.0** changed Version to make available for PW 3.0
 + **1.2.1** fixed namespace issue (selectable Inputfields)
++ **1.2.3** added config field for initial selection (default value)
++ **1.2.4** added config field for other language labels)
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
