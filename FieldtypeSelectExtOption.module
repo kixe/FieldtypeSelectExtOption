@@ -11,15 +11,16 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
- * @version 1.2.3 2017-02-12
+ * @version 1.2.4 2017-02-20
  * 
- * ProcessWire 2.x 
+ * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
  * Licensed under GNU/GPL v2, see LICENSE.TXT
  * 
  * http://processwire.com
  *
  * @since 1.2.3 - added config field for initial selection (default value) - 2017-02-12
+ * @since 1.2.4 - added config field for other language labels - 2017-02-20
  *
  *
  *
@@ -30,7 +31,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 123,
+			'version' => 124,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -230,7 +231,13 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		}
 		elseif ($field->type != 'FieldtypeSelectExtOption') throw new WireException("Expecting FieldtypeSelectExtOption.");
 		// create options array
-		$options = $this->getExtOptions($field->option_table,$field->option_value,$field->option_label,$this->filter($field),$field->option_order,$field->option_asc);
+		$langID = null;
+		if ($this->wire('modules')->isInstalled("LanguageSupport")) {
+			$defLangID = $this->wire('modules')->get("LanguageSupport")->defaultLanguagePageID;
+			$userLangID = $this->wire('user')->get('language')->id;
+			if ($defLangID != $userLangID && !empty($field->{"option_label_$userLangID"})) $langID ="_$userLangID";
+		}
+		$options = $this->getExtOptions($field->option_table,$field->option_value,$field->{"option_label$langID"},$this->filter($field),$field->option_order,$field->option_asc,$field->option_label);
 		return ($options)?$options:array(0 => 'no data');
 	}
 
@@ -242,7 +249,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 * @return array(value => label)
 	 *
 	 */
-	protected function getExtOptions($table, $value = false, $label = false, $filter= false, $order = false, $dir = false) {
+	protected function getExtOptions($table, $value = false, $label = false, $filter= false, $order = false, $dir = false, $defaultLabel = null) {
 
 		// check if table exist
 		$table = $this->database->escapeTable($table);
@@ -259,11 +266,15 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// check if column isset and exist, default 1st column
 		if($label === false) $label = $columns[0];
-		else if(!in_array($label,$columns))return false;
+		else if(!in_array($label,$columns)) return false;
+
+		// check if column isset and exist, default 1st column
+		if($defaultLabel === null) $defaultLabel = $label;
+		else if(!in_array($defaultLabel,$columns)) return false;
 
 		// check if column isset and exist, default 1st column of type int
 		if($value === false) $value = $intcolumn;
-		else if(!in_array($value,$columns))return false;
+		else if(!in_array($value,$columns)) return false;
 
 		$options = array();
 		
@@ -275,8 +286,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$query = $this->database->prepare("SELECT * FROM `$table` $filter ORDER BY `$order` $dir");
 		$query->execute();
 		if(!$query->rowCount()) return null;
-        	while($row = $query->fetch(PDO::FETCH_ASSOC)) $options[$row[$value]] = $row[$label];
-        	return $options;
+        while($row = $query->fetch(PDO::FETCH_ASSOC)) $options[$row[$value]] = strlen($row[$label])? $row[$label] : $row[$defaultLabel];
+        return $options;
 	}
 
 	protected function ___filter(Field $field) {
@@ -471,9 +482,10 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->columnWidth = 34; 
 		$fieldset->append($f);
 
-		// option label column
+		// option label column (default language)
 		$f = $this->modules->get("InputfieldSelect");
-		$f->label = $this->_("Option Label");
+		$appendLabelText = ($this->modules->isInstalled("LanguageSupport") && $this->modules->get("LanguageSupport")->otherLanguagePageIDs)?  " (default)":'';
+		$f->label = $this->_("Option Label$appendLabelText");
 		$f->attr('name', 'option_label');
 		$f->attr('value', $field->option_label);
 		$f->description = $this->_("Choose from all columns.");
@@ -481,6 +493,26 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		if ($columns) foreach ($columns as $label) $f->addOption($label, $label);
 		$f->columnWidth = 33; 
 		$fieldset->append($f);
+
+		// option label column (other languages)
+		if ($this->modules->isInstalled("LanguageSupport")) {
+			$otherLanguagePageIDs = $this->modules->get("LanguageSupport")->otherLanguagePageIDs;
+			$columnWidth = floor(100/ count($otherLanguagePageIDs));
+
+			foreach ($otherLanguagePageIDs as $otherLanguagePageID) {
+				$langName = $this->wire('languages')->get($otherLanguagePageID)->name;
+				$f = $this->modules->get("InputfieldSelect");
+				$f->label = $this->_("Option Label ($langName)");
+				$f->attr('name', "option_label_$otherLanguagePageID");
+				$f->attr('value', $field->{"option_label_$otherLanguagePageID"});
+				$f->description = $this->_("Choose from all columns.");
+				if (!$field->option_label) $f->addOption(null, 'no column selected!',array('selected'=>'selected'));
+				if ($columns) foreach ($columns as $label) $f->addOption($label, $label);
+				$f->columnWidth = $columnWidth;
+				$f->collapsed = Inputfield::collapsedBlank;
+				$fieldset->append($f);
+			}
+		}
 
 		// option filter
 		$fieldset = $this->modules->get("InputfieldFieldset");
