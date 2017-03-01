@@ -55,8 +55,7 @@ Order is Ascending by default. Check to switch to **Descending**
 ## API 
 
 ### Return a field value: $page->[fieldname]->[property]
-All column values are populated as a property (columnname) except values of columns 
-named with reserved words ('label', 'value', 'row', 'options' and 'data').  
+All column values are populated as a property (columnname) except values of columns named with reserved words ('label', 'value', 'row', 'options' and 'data').  
 
 ```
 
