@@ -213,6 +213,7 @@ Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules
 + **1.2.1** fixed namespace issue (selectable Inputfields)
 + **1.2.3** added config field for initial selection (default value)
 + **1.2.4** added config field for other language labels)
++ **1.2.5** fixed bug: added filter to function getTableRow(), allow 0 as value (data)
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
