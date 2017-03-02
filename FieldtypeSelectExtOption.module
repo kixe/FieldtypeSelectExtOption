@@ -165,6 +165,10 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$inputfield = $this->modules->get($class);
 		// get the options array
 		$options = $this->options($field);
+		// allow no pre-selection if value 0 is selectable
+		if (array_key_exists(0, $options) && $class  == 'InputfieldSelect') {
+			$inputfield->addOption('','&nbsp;');
+		}
 		// populate options
 		foreach($options as $optval => $label) {
 			$attributes = ($v == $optval)?array('selected'=>'selected'):null;
