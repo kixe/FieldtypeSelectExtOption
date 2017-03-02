@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
- * @version 1.2.5 2017-03-01
+ * @version 1.2.6 2017-03-02
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -22,6 +22,7 @@
  * @since 1.2.3 - added config field for initial selection (default value) - 2017-02-12
  * @since 1.2.4 - added config field for other language labels - 2017-02-20
  * @since 1.2.5 - fixed bug added filter to function getTableRow(), allow 0 as value (data) - 2017-03-01
+ * @since 1.2.6 - allow no pre-selection if value 0 is selectable - 2017-03-02
  *
  *
  */
@@ -31,7 +32,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 125,
+			'version' => 126,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -583,13 +584,19 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$inputfields->append($f);
 
 		// initial selection field preview
-		if(count($this->options($field)) && $field->input_type && $f = $this->wire('modules')->get($field->input_type)) {
+		$options = $this->options($field);
+		if(count($options) && $field->input_type && $f = $this->wire('modules')->get($field->input_type)) {
 			$f->attr('name', 'init_value'); 
 			$f->label = $this->_('What options do you want pre-selected? (if any)');
 
 			$f->collapsed = $field->option_value && $field->option_label? Inputfield::collapsedBlank : Inputfield::collapsedYes;;
 			$f->description = sprintf($this->_('This field also serves as a preview of your selected input type (%s) and options.'), $field->input_type); 
-			foreach($this->options($field) as $value => $label) {
+			// allow no pre-selection if value 0 is selectable
+			if (array_key_exists(0, $options) && $f instanceof InputfieldSelectMultiple === false) {
+				$label = $field->input_type == 'InputfieldRadios'? 'no pre-selection':'&nbsp;';
+				$f->addOption('',$label);
+			}
+			foreach($options as $value => $label) {
 				$f->addOption($value, $label); 
 			}
 			$f->attr('value', $field->init_value); 
