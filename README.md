@@ -211,6 +211,9 @@ Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules
 + **1.2.3** added config field for initial selection (default value)
 + **1.2.4** added config field for other language labels)
 + **1.2.5** fixed bug: added filter to function getTableRow(), allow 0 as value (data)
++ **1.2.6** allow no pre-selection if value 0 is selectable
++ **1.2.7** modified field render and added error message in case of an empty options array
++ **1.2.8** fixed multilanguage bug, fixed issues related to allowance of 0 values as selectable option
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
