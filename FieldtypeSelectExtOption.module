@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
- * @version 1.2.6 2017-03-02
+ * @version 1.2.7 2017-03-03
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -23,6 +23,7 @@
  * @since 1.2.4 - added config field for other language labels - 2017-02-20
  * @since 1.2.5 - fixed bug added filter to function getTableRow(), allow 0 as value (data) - 2017-03-01
  * @since 1.2.6 - allow no pre-selection if value 0 is selectable - 2017-03-02
+ * @since 1.2.7 - modified field render and added error message in case of an empty options array - 2017-03-03
  *
  *
  */
@@ -165,6 +166,13 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$inputfield = $this->modules->get($class);
 		// get the options array
 		$options = $this->options($field);
+		// any selectable options provided?
+		if (empty($options))  {
+			$inputfield = $this->modules->get('InputfieldMarkup');
+			$inputfield->textformatters = array('TextformatterMarkdownExtra');
+			$inputfield->markupText = "Field: *$field->name* doesn't provide selectable options. Check field settings!";
+			return $inputfield;
+		}
 		// allow no pre-selection if value 0 is selectable
 		if (array_key_exists(0, $options) && $class  == 'InputfieldSelect') {
 			$inputfield->addOption('','&nbsp;');
@@ -245,7 +253,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			if ($defLangID != $userLangID && !empty($field->{"option_label_$userLangID"})) $langID ="_$userLangID";
 		}
 		$options = $this->getExtOptions($field->option_table,$field->option_value,$field->{"option_label$langID"},$this->filter($field),$field->option_order,$field->option_asc,$field->option_label);
-		return ($options)?$options:array(0 => 'no data');
+		return $options;
 	}
 
 	/**
@@ -589,7 +597,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// initial selection field preview
 		$options = $this->options($field);
-		if(count($options) && $field->input_type && $f = $this->wire('modules')->get($field->input_type)) {
+		if(!empty($options) && $field->input_type && $f = $this->wire('modules')->get($field->input_type)) {
 			$f->attr('name', 'init_value'); 
 			$f->label = $this->_('What options do you want pre-selected? (if any)');
 
@@ -612,7 +620,10 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			$f->showIf = "option_value!='',option_label!=''";
 			$inputfields->add($f); 
 		}
-
+		// no selectable options provided
+		else if ($field->option_table && $field->option_lable && $field->option_value && !count($_POST) && empty($options))  {
+			$this->error("No selectable options provided. Check your 'Source' and 'Filter' settings.");
+		}
 		return $inputfields;
 	}
 }
