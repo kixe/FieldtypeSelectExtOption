@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
- * @version 1.2.7 2017-03-03
+ * @version 1.2.8 2017-03-03
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -24,6 +24,7 @@
  * @since 1.2.5 - fixed bug added filter to function getTableRow(), allow 0 as value (data) - 2017-03-01
  * @since 1.2.6 - allow no pre-selection if value 0 is selectable - 2017-03-02
  * @since 1.2.7 - modified field render and added error message in case of an empty options array - 2017-03-03
+ * @since 1.2.8 - fixed multilanguage bug, fixed issues related to allowance of 0 values as selectable option - 2017-03-03
  *
  *
  */
@@ -33,7 +34,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 126,
+			'version' => 128,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -156,14 +157,16 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 	public function getInputfield(Page $page, Field $field) {
 
-		// get selected values
-		$v = $this->sleepValue($page,$field,$page->$field);
-		// or init value
-		if((empty($v) || !count($v)) && $field->init_value && ($field->required || $field->requiredIf)) $v = $field->init_value;
 		// get (set default) name of Inputfieldtype
 		$class = ($field->input_type)?$field->input_type:'InputfieldSelect';
 		// set Inputfield
 		$inputfield = $this->modules->get($class);
+
+		// InputfieldSelect::isOptionSelected() returns true since PHP::in_array(0, array('')) returns true (if not strict)
+		// we need to hook in render() to allow the value (int) 0
+		$this->addHookBefore("InputfieldSelect::render", function ($e) {
+			if ($e->object->isEmpty() && $e->object instanceof InputfieldHasArrayValue == true) $e->object->attr('value', array());
+		});
 		// get the options array
 		$options = $this->options($field);
 		// any selectable options provided?
@@ -172,16 +175,21 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			$inputfield->textformatters = array('TextformatterMarkdownExtra');
 			$inputfield->markupText = "Field: *$field->name* doesn't provide selectable options. Check field settings!";
 			return $inputfield;
+		}	
+
+		// field required
+		if ($field->required && !$field->requiredIf) {
+			// init value (overwrites defaultValue if set)
+			$v = $this->sleepValue($page,$field,$page->$field);
+			if(empty($v) && $field->init_value) $page->set($field->name, $field->init_value);
+			else if(empty($v) && $field->defaultValue === 0) $page->set($field->name, 0);
 		}
-		// allow no pre-selection if value 0 is selectable
-		if (array_key_exists(0, $options) && $class  == 'InputfieldSelect') {
-			$inputfield->addOption('','&nbsp;');
-		}
+		// no init selection and allow unselect if value 0 is selectable and field is not required
+		// @see InputfieldSelect::renderOptions() @var $hasBlankOption
+		else if (array_key_exists(0, $options) && $class == 'InputfieldSelect') $inputfield->addOption('','&nbsp;');
+
 		// populate options
-		foreach($options as $optval => $label) {
-			$attributes = ($v == $optval)?array('selected'=>'selected'):null;
-			$inputfield->addOption($optval,$label,$attributes);
-		}
+		foreach($options as $optval => $label) $inputfield->addOption($optval,$label);
 
 		return $inputfield;
 	}
@@ -354,6 +362,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$return = new WireArray();
 		foreach ($value as $val) $return->set($val,$this->getSingleValue($field,$val));
 		$return->data('options',$this->options($field));
+		// var_dump($return);
 		return $return;
 	}
 
@@ -499,9 +508,11 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->columnWidth = 34; 
 		$fieldset->append($f);
 
+		// multilanguage environment
+		$otherLanguagePageIDs = $this->modules->isInstalled("LanguageSupport")? $this->modules->get("LanguageSupport")->otherLanguagePageIDs:null;
 		// option label column (default language)
 		$f = $this->modules->get("InputfieldSelect");
-		$appendLabelText = ($this->modules->isInstalled("LanguageSupport") && $this->modules->get("LanguageSupport")->otherLanguagePageIDs)?  " (default)":'';
+		$appendLabelText = $otherLanguagePageIDs?  " (default)":'';
 		$f->label = $this->_("Option Label$appendLabelText");
 		$f->attr('name', 'option_label');
 		$f->attr('value', $field->option_label);
@@ -512,8 +523,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$fieldset->append($f);
 
 		// option label column (other languages)
-		if ($this->modules->isInstalled("LanguageSupport")) {
-			$otherLanguagePageIDs = $this->modules->get("LanguageSupport")->otherLanguagePageIDs;
+		if ($otherLanguagePageIDs) {
 			$columnWidth = floor(100/ count($otherLanguagePageIDs));
 
 			foreach ($otherLanguagePageIDs as $otherLanguagePageID) {
@@ -598,6 +608,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// initial selection field preview
 		$options = $this->options($field);
 		if(!empty($options) && $field->input_type && $f = $this->wire('modules')->get($field->input_type)) {
+			$f->optionColumns = $field->optionColumns? $field->optionColumns:null;
 			$f->attr('name', 'init_value'); 
 			$f->label = $this->_('What options do you want pre-selected? (if any)');
 
@@ -605,14 +616,14 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			$f->description = sprintf($this->_('This field also serves as a preview of your selected input type (%s) and options.'), $field->input_type); 
 			// allow no pre-selection if value 0 is selectable
 			if (array_key_exists(0, $options) && $f instanceof InputfieldSelectMultiple === false) {
-				$label = $field->input_type == 'InputfieldRadios'? 'no pre-selection':'&nbsp;';
+				$label = $field->input_type == 'InputfieldRadios'? '*no pre-selection*':'&nbsp;';
 				$f->addOption('',$label);
 			}
 			foreach($options as $value => $label) {
 				$f->addOption($value, $label); 
 			}
 			$f->attr('value', $field->init_value); 
-			if(!$field->required && !$field->requiredIf) {
+			if(!$field->required) {
 				$f->notes = $this->_('Please note: your selections here do not become active unless a value is *always* required for this field. See the "required" option on the Input tab of your field settings.');
 			} else {
 				$f->notes = $this->_('This feature is active since a value is always required.'); 
