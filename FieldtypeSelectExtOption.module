@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
- * @version 1.2.8 2017-03-03
+ * @version 1.2.9 2017-03-03
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -25,6 +25,7 @@
  * @since 1.2.6 - allow no pre-selection if value 0 is selectable - 2017-03-02
  * @since 1.2.7 - modified field render and added error message in case of an empty options array - 2017-03-03
  * @since 1.2.8 - fixed multilanguage bug, fixed issues related to allowance of 0 values as selectable option - 2017-03-03
+ * @since 1.2.9 - added hookable function label - 2017-03-03
  *
  *
  */
@@ -189,7 +190,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		else if (array_key_exists(0, $options) && $class == 'InputfieldSelect') $inputfield->addOption('','&nbsp;');
 
 		// populate options
-		foreach($options as $optval => $label) $inputfield->addOption($optval,$label);
+		foreach($options as $optval => $label) $inputfield->addOption($optval, $this->label($label, $page, $field));
 
 		return $inputfield;
 	}
@@ -311,6 +312,10 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		if(!$query->rowCount()) return null;
         while($row = $query->fetch(PDO::FETCH_ASSOC)) $options[$row[$value]] = strlen($row[$label])? $row[$label] : $row[$defaultLabel];
         return $options;
+	}
+
+	protected function ___label($rawLabel, Page $page, Field $field) {
+		return $rawLabel;
 	}
 
 	protected function ___filter(Field $field) {
