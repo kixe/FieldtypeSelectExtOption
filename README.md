@@ -214,6 +214,7 @@ Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules
 + **1.2.6** allow no pre-selection if value 0 is selectable
 + **1.2.7** modified field render and added error message in case of an empty options array
 + **1.2.8** fixed multilanguage bug, fixed issues related to allowance of 0 values as selectable option
++ **1.2.9** added hookable function label()
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)

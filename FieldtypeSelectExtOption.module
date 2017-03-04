@@ -25,7 +25,7 @@
  * @since 1.2.6 - allow no pre-selection if value 0 is selectable - 2017-03-02
  * @since 1.2.7 - modified field render and added error message in case of an empty options array - 2017-03-03
  * @since 1.2.8 - fixed multilanguage bug, fixed issues related to allowance of 0 values as selectable option - 2017-03-03
- * @since 1.2.9 - added hookable function label - 2017-03-03
+ * @since 1.2.9 - added hookable function label() - 2017-03-03
  *
  *
  */
@@ -35,7 +35,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 128,
+			'version' => 129,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
