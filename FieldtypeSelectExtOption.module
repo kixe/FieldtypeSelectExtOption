@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
- * @version 1.2.9 2017-03-03
+ * @version 1.3.0 2017-03-06
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -26,6 +26,7 @@
  * @since 1.2.7 - modified field render and added error message in case of an empty options array - 2017-03-03
  * @since 1.2.8 - fixed multilanguage bug, fixed issues related to allowance of 0 values as selectable option - 2017-03-03
  * @since 1.2.9 - added hookable function label() - 2017-03-03
+ * @since 1.3.0 - modified arguments of function label() - 2017-03-06
  *
  *
  */
@@ -35,7 +36,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 129,
+			'version' => 130,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -190,7 +191,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		else if (array_key_exists(0, $options) && $class == 'InputfieldSelect') $inputfield->addOption('','&nbsp;');
 
 		// populate options
-		foreach($options as $optval => $label) $inputfield->addOption($optval, $this->label($label, $page, $field));
+		foreach($options as $optval => $label) $inputfield->addOption($optval, $this->label($label, $page, $this->getTableRow($field, $optval)));
 
 		return $inputfield;
 	}
@@ -314,10 +315,26 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
         return $options;
 	}
 
-	protected function ___label($rawLabel, Page $page, Field $field) {
+	/**
+	 * Hookable function called from Inputield provides option to edit option labels
+	 *
+	 * @param string $rawLabel as pulled from database column
+	 * @param object $page
+	 * @param array $tableRow database table row related to the value
+	 * @return string
+	 *
+	 */
+	protected function ___label($rawLabel, Page $page, $tableRow) {
 		return $rawLabel;
 	}
 
+	/**
+	 * Hookable function provides option to filter options array
+	 *
+	 * @param object $field
+	 * @return string SQL command filter part. example: "column = 'value'"
+	 *
+	 */
 	protected function ___filter(Field $field) {
 		// all parts set?
 		if(!$field->filter_column||!$field->filter_selector||!$field->filter_value) return false;
