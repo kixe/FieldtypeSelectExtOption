@@ -346,7 +346,9 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	}
 
 	public function getBlankValue(Page $page, Field $field) {
-		return (!$field->input_type)?new SelectExtOption():new WireArray();
+		$return = (!$field->input_type)?new SelectExtOption():new WireArray();
+		$return->setTrackChanges(true);
+		return $return;
 	}
 
 	public function getSingleValue(Field $field, $value) {
@@ -385,6 +387,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		foreach ($value as $val) $return->set($val,$this->getSingleValue($field,$val));
 		$return->data('options',$this->options($field));
 		// var_dump($return);
+		$return->resetTrackChanges();
 		return $return;
 	}
 
