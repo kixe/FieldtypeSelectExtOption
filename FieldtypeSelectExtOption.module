@@ -27,7 +27,7 @@
  * @since 1.2.8 - fixed multilanguage bug, fixed issues related to allowance of 0 values as selectable option - 2017-03-03
  * @since 1.2.9 - added hookable function label() - 2017-03-03
  * @since 1.3.0 - modified arguments of function label() - 2017-03-06
- *
+ * @since 1.3.1 - added hook to remove InputfieldSelect::defaultValue doubled by init_value - 2017-04-19
  *
  */
 
@@ -36,7 +36,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 130,
+			'version' => 131,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -158,7 +158,11 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	}
 
 	public function getInputfield(Page $page, Field $field) {
-
+		$this->addHookAfter('InputfieldSelect::getConfigInputfields', function($e) {
+			$inputfields = $e->return;
+			$e->return = $inputfields->remove('defaultValue');
+		});
+		
 		// get (set default) name of Inputfieldtype
 		$class = ($field->input_type)?$field->input_type:'InputfieldSelect';
 		// set Inputfield
@@ -183,8 +187,12 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		if ($field->required && !$field->requiredIf) {
 			// init value (overwrites defaultValue if set)
 			$v = $this->sleepValue($page,$field,$page->$field);
-			if(empty($v) && $field->init_value) $page->set($field->name, $field->init_value);
-			else if(empty($v) && $field->defaultValue === 0) $page->set($field->name, 0);
+			if (empty($v) && $field->init_value) $page->set($field->name, $field->init_value);
+			// if a defaultValue is set via API
+			else if ($field->defaultValue !== null) {
+				if (array_key_exists($field->defaultValue, $this->options($field))) $page->set($field->name, $field->defaultValue);
+				else throw new WireException("$field->defaultValue is not a selectable value and therefore can not be used as defaultValue");
+			}
 		}
 		// no init selection and allow unselect if value 0 is selectable and field is not required
 		// @see InputfieldSelect::renderOptions() @var $hasBlankOption
