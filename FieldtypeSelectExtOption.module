@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
- * @version 1.3.2 2017-07-23
+ * @version 1.3.3 2017-07-25
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -28,7 +28,8 @@
  * @since 1.2.9 - added hookable function label() - 2017-03-03
  * @since 1.3.0 - modified arguments of function label() - 2017-03-06
  * @since 1.3.1 - added hook to remove InputfieldSelect::defaultValue doubled by init_value - 2017-04-19
- * @since 1.3.2 - fixed issue: quick exit of getTableRow() if external database connection fails - 2017-07-23
+ * @since 1.3.2 - fixed issue: quick exit of getTableRow() if external database connection fails - 2017-07-25
+ * @since 1.3.3 - fixed issues: setting default port to external db, return value of of getDatabaseColumns - 2017-07-25
  *
  */
 
@@ -37,7 +38,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 132,
+			'version' => 133,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
