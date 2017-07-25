@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
- * @version 1.3.0 2017-03-06
+ * @version 1.3.2 2017-07-23
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -28,6 +28,7 @@
  * @since 1.2.9 - added hookable function label() - 2017-03-03
  * @since 1.3.0 - modified arguments of function label() - 2017-03-06
  * @since 1.3.1 - added hook to remove InputfieldSelect::defaultValue doubled by init_value - 2017-04-19
+ * @since 1.3.2 - fixed issue: quick exit of getTableRow() if external database connection fails - 2017-07-23
  *
  */
 
@@ -54,18 +55,18 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 * 
 	 * 
 	 * @param Field $field
-	 * @return WireDatabasePDO
+	 * @return bool if WireDatabasePDO could be set
 	 * 
 	 */
 	protected function setDatabase(Field $field) {
-		if (!$field) $this->database= $this->wire('database');
-		if (!strlen($field->db_user.$field->db_pass.$field->db_name)) {
+		if (!$field) $this->database = $this->wire('database');
+		else if (!strlen($field->db_user.$field->db_pass.$field->db_name)) {
 			$this->database = $this->wire('database');
-			return;
 		}
-		elseif (strlen($field->db_user) == 0 || strlen($field->db_pass) == 0 || strlen($field->db_name) == 0) {
+		else if (strlen($field->db_user) == 0 || strlen($field->db_pass) == 0 || strlen($field->db_name) == 0) {
 			$this->database= $this->wire('database');
 			if (!count($_POST)) $this->error('Setting an external database failed: Missing value/s');
+			return false;
 		}
 		else {
 			try	{
@@ -93,10 +94,13 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 				$this->database = $database;			
 			} catch(Exception $e) {
 				$this->database = $this->wire('database');
-				if (!count($_POST)) $this->error('Setting an external database failed: '.$e->getMessage());
-				// return $e->getMessage();
+				if (!count($_POST)) {
+					$this->error('Setting an external database failed: '.$e->getMessage());
+					return false;
+				}
 			}
 		}
+		return true;
 	}
 
 	/**
@@ -108,7 +112,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 *
 	 */
 	protected function getTableRow(Field $field, $value) {
-		$this->setDatabase($field);
+		if (!$this->setDatabase($field)) return array();
 		$table = $field->option_table;
 		if(!$table) return array();
 		$columns = $this->getDatabaseColumns($table);
