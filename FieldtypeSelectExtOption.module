@@ -76,7 +76,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 				$name = $field->db_name;
 				$socket = $field->db_socket; 
 				$charset = $this->wire('config')->dbCharset; // charset set in config, don't change here!
-				$port =  $field->db_port; // default port set in config
+				$port = $field->db_port; // default port set in config
 
 				if($socket) {
 					// if socket is provided ignore $host and $port and use $socket instead:
@@ -89,6 +89,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 					PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES '$charset'",
 					PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
 					);
+
 				$database = new WireDatabasePDO($dsn, $username, $password, $driver_options); 
 				$database->setDebugMode($this->wire('config')->debug);
 				$this->database = $database;			
@@ -216,12 +217,12 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 *
 	 */
 	protected function getDatabaseColumns($table) {
-		if(!in_array($table,$this->database->getTables())) return null;
+		if(!in_array($table,$this->database->getTables())) return array();
 		$columns = array();
 		$table = $this->database->escapeTable($table);
 		$sql = "SHOW COLUMNS FROM $table"; 			
 		$query = $this->database->query($sql);
-		if(!$query->rowCount()) return null;
+		if(!$query->rowCount()) return array();
 		$rows = $query->fetchAll();
 		foreach($rows as $row) $columns[] = $row['Field'];
 		return $columns; 
@@ -507,7 +508,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f = $this->modules->get("InputfieldText");
 		$f->label = $this->_("DB Port");
 		$f->attr('name', 'db_port');
-		($field->db_port)? $f->attr('value', $field->db_port) : $this->wire('config')->dbPort;
+		$field->db_port? $f->attr('value', $field->db_port) : $f->attr('value', $this->wire('config')->dbPort);
 		$f->columnWidth = 20;
 		$fieldset->append($f);
 
