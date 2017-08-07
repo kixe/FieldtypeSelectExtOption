@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 09.03.15
  * Licensed under GNU/GPL v3
- * @version 1.3.3 2017-07-25
+ * @version 1.3.4 2017-07-25
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -30,6 +30,7 @@
  * @since 1.3.1 - added hook to remove InputfieldSelect::defaultValue doubled by init_value - 2017-04-19
  * @since 1.3.2 - fixed issue: quick exit of getTableRow() if external database connection fails - 2017-07-25
  * @since 1.3.3 - fixed issues: setting default port to external db, return value of of getDatabaseColumns - 2017-07-25
+ * @since 1.3.4 - better error handling - external databases - 2017-07-25
  *
  */
 
@@ -38,7 +39,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 133,
+			'version' => 134,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -49,7 +50,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		);
 	}
 	
-	protected $database;
+	protected $database = null;
 
 	/**
 	 * Create a new PDO instance from field settings. set database property
@@ -86,16 +87,20 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 					$dsn = "mysql:dbname=$name;host=$host";
 					if($port) $dsn .= ";port=$port";
 				}
+				if (!$this->checkAccess($host, $port)) {
+					$field->db_host = 'localhost'; // we reset to localhost 
+					$field->save('db_host');
+					return false;
+				}
 				$driver_options = array(
 					PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES '$charset'",
-					PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+					PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+					PDO::ATTR_TIMEOUT => 5
 					);
-
 				$database = new WireDatabasePDO($dsn, $username, $password, $driver_options); 
 				$database->setDebugMode($this->wire('config')->debug);
 				$this->database = $database;			
 			} catch(Exception $e) {
-				$this->database = $this->wire('database');
 				if (!count($_POST)) {
 					$this->error('Setting an external database failed: '.$e->getMessage());
 					return false;
@@ -103,6 +108,53 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * Check accessibility of external host:port before trying to create a database connection
+	 *
+	 * @param string $host
+	 * @param string/int $port
+	 * @return bool
+	 *
+	 */
+	protected function checkAccess($host, $port) {
+		if(!function_exists('socket_create')) return true;
+		// make all errors, warnings, notices exception
+		// set_error_handler(function($errno, $errstr) {throw new Exception($errstr, $errno);});
+
+		if (!filter_var($host, FILTER_VALIDATE_IP)) {
+			$_host = gethostbyname($host);	
+			if (empty($_POST) && $_host == $host) $this->error("Unable to translate '$host' to valid IP Adress (IPv4)");
+			else if (empty($_POST) && !filter_var($_host, FILTER_VALIDATE_IP)) $this->error('Invalid IPv4 syntax for host');
+			else $host = $_host;	
+		}
+		if (!empty($this->errors(array('array')))) return false;
+
+		$socket = socket_create(AF_INET, SOCK_STREAM, 0);
+		$message = '';
+		try {
+			if (socket_connect($socket, $host, $port)) {
+				socket_close($socket);
+				return true;
+			}
+		}
+		catch (Exception $e) {
+			$message = "Error: ".$e->getMessage();
+
+		}
+		if (empty($_POST)) $this->error("No response from [$host:$port]. $message");
+		restore_error_handler();
+		return false;
+	}
+
+	/**
+	 * prevent database queries before database is set
+	 *
+	 */
+	public function getLoadQueryAutojoin(Field $field, DatabaseQuerySelect $query) {
+		if (!$this->database) return null;
+		return parent::getLoadQueryAutojoin($field, $query);
 	}
 
 	/**
@@ -218,7 +270,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 *
 	 */
 	protected function getDatabaseColumns($table) {
-		if(!in_array($table,$this->database->getTables())) return array();
+		if(!$this->database||!in_array($table,$this->database->getTables())) return array();
 		$columns = array();
 		$table = $this->database->escapeTable($table);
 		$sql = "SHOW COLUMNS FROM $table"; 			
@@ -289,6 +341,9 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 *
 	 */
 	protected function getExtOptions($table, $value = false, $label = false, $filter= false, $order = false, $dir = false, $defaultLabel = null) {
+
+		// quick exit
+		if (!$this->database) return false;
 
 		// check if table exist
 		$table = $this->database->escapeTable($table);
@@ -420,8 +475,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	
 	public function ___getConfigInputfields(Field $field) {
 
-		$this->setDatabase($field);
 		$inputfields = parent::___getConfigInputfields($field);
+		$this->setDatabase($field);
 
 		// usage
 		$markup = file_exists(dirname(__FILE__) . '/README.md')?file_get_contents(dirname(__FILE__) . '/README.md'):null;
@@ -459,7 +514,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$fieldset->label = $this->_('External MySQL Database/ Host');
 		$fieldset->description = $this->_("Optionally specify an external MySQL 5.x database. If the database is not accessible for any reason default database will be selected.");
 		$fieldset->notes = $this->_('Incorrect entries in the field \'DB Host\' produce unsightly error messages! Be aware of this.');
-		$fieldset->collapsed = Inputfield::collapsedYes;
+		$fieldset->collapsed = strlen($field->db_name.$field->db_user.$field->db_pass)? Inputfield::collapsedNo : Inputfield::collapsedYes;
 		$inputfields->add($fieldset);
 
 		// DB Name
@@ -527,7 +582,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->attr('value', $field->option_table);
 		if (!$field->option_table) $f->addOption(null, 'no table selected!',array('selected'=>'selected'));
 		if ($this->getExtOptions($field->option_table) === null && !count($_POST)) $f->error('Table doesn\'t contain any data!');
-		foreach ($this->database->getTables() as $table) $f->addOption($table, $table);
+		if ($this->database) foreach ($this->database->getTables() as $table) $f->addOption($table, $table);
 		$f->description = $this->_("Choose a table in your database.");
 		$f->columnWidth = 33;
 		$fieldset->append($f);
@@ -542,7 +597,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		if ($columns) foreach ($columns as $value) {
 			if ($this->isIntColumn($field->option_table,$value)) $f->addOption($value, $value);
 		}
-		if ($field->option_table && !count($f->getOptions()) && !count($_POST)) $f->error("Only tables with columns of type 'integer' allowed!");
+		if ($this->database && $field->option_table && !count($f->getOptions()) && !count($_POST)) $f->error("Only tables with columns of type 'integer' allowed!");
 		if (!$field->option_value) $f->addOption(null, 'no column selected!',array('selected'=>'selected'));		
 		$f->columnWidth = 34; 
 		$fieldset->append($f);
