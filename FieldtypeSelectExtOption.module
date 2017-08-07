@@ -278,8 +278,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		if(!$query->rowCount()) return array();
 		$rows = $query->fetchAll();
 		foreach($rows as $row) $columns[] = $row['Field'];
-		return $columns; 
-		
+		return $columns; 	
 	}
 
 	/**
