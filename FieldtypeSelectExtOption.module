@@ -31,6 +31,7 @@
  * @since 1.3.2 - fixed issue: quick exit of getTableRow() if external database connection fails - 2017-07-25
  * @since 1.3.3 - fixed issues: setting default port to external db, return value of of getDatabaseColumns - 2017-07-25
  * @since 1.3.4 - better error handling - external databases - 2017-07-25
+ * @since 1.3.5 - modified arguments of function label() - 2017-08-28
  *
  */
 
@@ -39,7 +40,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 134,
+			'version' => 135,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -257,7 +258,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		else if (array_key_exists(0, $options) && $class == 'InputfieldSelect') $inputfield->addOption('','&nbsp;');
 
 		// populate options
-		foreach($options as $optval => $label) $inputfield->addOption($optval, $this->label($label, $page, $this->getTableRow($field, $optval)));
+		foreach($options as $optval => $label) $inputfield->addOption($optval, $this->label($label, $optval, $page, $field));
 
 		return $inputfield;
 	}
@@ -386,14 +387,15 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	/**
 	 * Hookable function called from Inputield provides option to edit option labels
 	 *
-	 * @param string $rawLabel as pulled from database column
+	 * @param string $label (option label)
+	 * @param int $value (option value)
 	 * @param object $page
-	 * @param array $tableRow database table row related to the value
+	 * @param object $field
 	 * @return string
 	 *
 	 */
-	protected function ___label($rawLabel, Page $page, $tableRow) {
-		return $rawLabel;
+	protected function ___label($label, $value, Page $page, Field $field) {
+		return $label;
 	}
 
 	/**
