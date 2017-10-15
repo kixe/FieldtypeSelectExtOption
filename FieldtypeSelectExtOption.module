@@ -314,6 +314,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 */
 	public function options($field = null) {
 		if (!$field instanceof Field) {
+			$selector = '';
 			if (is_int($field)) $selector = ",id=$field";
 			elseif (is_string($field)) $selector = ",name=$field";
 			$_field = $field;
