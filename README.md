@@ -208,13 +208,20 @@ Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules
 + **1.1.9** corrected translatable strings
 + **1.2.0** changed Version to make available for PW 3.0
 + **1.2.1** fixed namespace issue (selectable Inputfields)
-+ **1.2.3** added config field for initial selection (default value)
-+ **1.2.4** added config field for other language labels)
-+ **1.2.5** fixed bug: added filter to function getTableRow(), allow 0 as value (data)
-+ **1.2.6** allow no pre-selection if value 0 is selectable
-+ **1.2.7** modified field render and added error message in case of an empty options array
-+ **1.2.8** fixed multilanguage bug, fixed issues related to allowance of 0 values as selectable option
-+ **1.2.9** added hookable function label()
++ **1.2.3** - added config field for initial selection (default value) - 2017-02-12
++ **1.2.4** - added config field for other language labels - 2017-02-20
++ **1.2.5** - fixed bug added filter to function getTableRow(), allow 0 as value (data) - 2017-03-01
++ **1.2.6** - allow no pre-selection if value 0 is selectable - 2017-03-02
++ **1.2.7** - modified field render and added error message in case of an empty options array - 2017-03-03
++ **1.2.8** - fixed multilanguage bug, fixed issues related to allowance of 0 values as selectable option - 2017-03-03
++ **1.2.9** - added hookable function label() - 2017-03-03
++ **1.3.0** - modified arguments of function label() - 2017-03-06
++ **1.3.1** - added hook to remove InputfieldSelect::defaultValue doubled by init_value - 2017-04-19
++ **1.3.2** - fixed issue: quick exit of getTableRow() if external database connection fails - 2017-07-25
++ **1.3.3** - fixed issues: setting default port to external db, return value of of getDatabaseColumns - 2017-07-25
++ **1.3.4** - better error handling - external databases - 2017-07-25
++ **1.3.5** - modified arguments of function label() - 2017-08-28
++ **1.3.6** - fixed bug in function options() - 2017-10-15
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
