@@ -32,7 +32,8 @@
  * @since 1.3.3 - fixed issues: setting default port to external db, return value of of getDatabaseColumns - 2017-07-25
  * @since 1.3.4 - better error handling - external databases - 2017-07-25
  * @since 1.3.5 - modified arguments of function label() - 2017-08-28
- * @since 1.3.6 - fixed bug in function options() - 2017-10-15
+ * @since 1.3.6 - fixed bug: in function options() - 2017-10-15
+ * @since 1.3.7 - fixed bug: attribute value not provided if page instance of NullPage - 2018-03-27
  *
  */
 
@@ -41,7 +42,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 136,
+			'version' => 137,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -258,8 +259,11 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// @see InputfieldSelect::renderOptions() @var $hasBlankOption
 		else if (array_key_exists(0, $options) && $class == 'InputfieldSelect') $inputfield->addOption('','&nbsp;');
 
+		$inputfield->attr('value', $page->{$field->name});
 		// populate options
-		foreach($options as $optval => $label) $inputfield->addOption($optval, $this->label($label, $optval, $page, $field));
+		foreach($options as $optval => $label) {
+			$inputfield->addOption($optval, $this->label($label, $optval, $page, $field), array());
+		}
 
 		return $inputfield;
 	}
