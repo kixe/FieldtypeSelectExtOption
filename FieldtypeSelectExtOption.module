@@ -9,9 +9,9 @@
  * access to selected datatable row via Api
  * 
  * 
- * made by kixe (Christoph Thelen) 09.03.15
+ * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 1.3.6 2017-10-15
+ * @version 1.3.8 2018-03-30
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -34,6 +34,7 @@
  * @since 1.3.5 - modified arguments of function label() - 2017-08-28
  * @since 1.3.6 - fixed bug: in function options() - 2017-10-15
  * @since 1.3.7 - fixed bug: attribute value not provided if page instance of NullPage - 2018-03-27
+ * @since 1.3.8 - fixed bug: return language sensitive label getSingleValue() - 2018-03-30
  *
  */
 
@@ -42,7 +43,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 137,
+			'version' => 138,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -439,7 +440,13 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		}
 		$new->row = $row;
 		$new->options = $this->options($field);
-		$new->label = $field->option_label?$row[$field->option_label]:reset($row);
+		$langID = null;
+		if ($this->wire('modules')->isInstalled("LanguageSupport")) {
+			$defLangID = $this->wire('modules')->get("LanguageSupport")->defaultLanguagePageID;
+			$userLangID = $this->wire('user')->get('language')->id;
+			if ($defLangID != $userLangID && !empty($field->{"option_label_$userLangID"})) $langID ="_$userLangID";
+		}
+		$new->label = $field->{"option_label$langID"}? $row[$field->{"option_label$langID"}]:reset($row);
 		return $new;
 	}
 
