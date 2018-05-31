@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 1.3.8 2018-03-30
+ * @version 1.3.9 2018-05-31
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -35,6 +35,7 @@
  * @since 1.3.6 - fixed bug: in function options() - 2017-10-15
  * @since 1.3.7 - fixed bug: attribute value not provided if page instance of NullPage - 2018-03-27
  * @since 1.3.8 - fixed bug: return language sensitive label getSingleValue() - 2018-03-30
+ * @since 1.3.9 - switched return of SelectExtOption::__toString() from value (int) to label - 2018-05-31
  *
  */
 
@@ -43,7 +44,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 138,
+			'version' => 139,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -782,6 +783,6 @@ class SelectExtOption extends WireData {
 
 	// magic patch by teppo replaces hook
 	public function __toString() {
-		return (string) $this->value;
+		return (string) $this->label;
     }
 }
