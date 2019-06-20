@@ -54,7 +54,11 @@ Order is Ascending by default. Check to switch to **Descending**
 
 ## API 
 
-### Return a field value: $page->[fieldname]->[property]
+### Return field value
+#### `$page->[fieldname]`  
+By default you get the value. A value from another column can be selected in the field settings.
+
+#### `$page->[fieldname]->[property]`  
 All column values are populated as a property (columnname) except values of columns named with reserved words ('label', 'value', 'row', 'options' and 'data').  
 
 ```
@@ -88,7 +92,7 @@ $page->myfield->each('pages_id') // array of value of column 'pages\_id' of each
 
 *note: to get the value of a column named by reserved word use the row property, like $page->myfield->row['data']*
 
-### Set a field value
+### Set a field value via API
 
 ```
 
@@ -125,21 +129,21 @@ $getdata = $modules->get('FieldtypeSelectExtOption');
 // return array of all possible value/ label pairs version >= 1.1.6 
 $getdata->options('selector'); // selector = field-name, field-id or field-instance
 
-// will find the first or only field of type SelectExtOption in current page
+// find value(s) of the first or only field of type SelectExtOption in current page
 $getdata->row();
 
-// will find a specific field of type SelectExtOption in current page, useful if more than one of same type
+// find value(s) of a specific field of type SelectExtOption in current page, useful if more than one of same type
 $getdata->row('myfield');
 
-// will find a specific field of type SelectExtOption in a page found by selector string
+// find value(s) of a specific field of type SelectExtOption in a page found by selector string
 $getdata->row('myfield','selectorstring');
 
-// will find the first or only field of type SelectExtOption in a page found by selector string
+// find value(s) of the first or only field of type SelectExtOption in a page found by selector string
 $getdata->row(null,'selectorstring');
 
 ```
 
-Function row() will return a MultipleArray with the stored value as key.
+Function row() will return a MultipleArray with the stored value(s) as key.
 
 #### Example
 + Field Settings
@@ -222,6 +226,7 @@ Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules
 + **1.3.4** - better error handling - external databases - 2017-07-25
 + **1.3.5** - modified arguments of function label() - 2017-08-28
 + **1.3.6** - fixed bug in function options() - 2017-10-15
++ **1.4.1** - added config field to define return of SelectExtOption::__toString() - 2019-06-20
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
