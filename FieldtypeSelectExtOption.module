@@ -1,22 +1,22 @@
 <?php
 
 /**
- * ProcessWire Module Fieldtype Select External Option 
+ * ProcessWire Module Fieldtype Select External Option
  * extend all Selectfieldtypes
  * provide all Inputfields
- * 
- * pulls options (value/ label pairs) from other datatable (also other fields) 
+ *
+ * pulls options (value/ label pairs) from other datatable (also other fields)
  * access to selected datatable row via Api
- * 
- * 
+ *
+ *
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
  * @version 1.4.1 2019-06-20
- * 
+ *
  * ProcessWire 2.x, 3.x
- * Copyright (C) 2013 by Ryan Cramer 
+ * Copyright (C) 2013 by Ryan Cramer
  * Licensed under GNU/GPL v2, see LICENSE.TXT
- * 
+ *
  * http://processwire.com
  *
  * @since 1.2.3 - added config field for initial selection (default value) - 2017-02-12
@@ -56,16 +56,16 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			'requires' => 'ProcessWire>=2.5.0'
 		);
 	}
-	
+
 	protected $database = null;
 
 	/**
 	 * Create a new PDO instance from field settings. set database property
-	 * 
-	 * 
+	 *
+	 *
 	 * @param Field $field
 	 * @return bool if WireDatabasePDO could be set
-	 * 
+	 *
 	 */
 	protected function setDatabase(Field $field) {
 		if (!$field) $this->database = $this->wire('database');
@@ -83,7 +83,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 				$username = $field->db_user;
 				$password = $field->db_pass;
 				$name = $field->db_name;
-				$socket = $field->db_socket; 
+				$socket = $field->db_socket;
 				$charset = $this->wire('config')->dbCharset; // charset set in config, don't change here!
 				$port = $field->db_port; // default port set in config
 
@@ -95,7 +95,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 					if($port) $dsn .= ";port=$port";
 				}
 				if (!$this->checkAccess($host, $port)) {
-					$field->db_host = 'localhost'; // we reset to localhost 
+					$field->db_host = 'localhost'; // we reset to localhost
 					$field->save('db_host');
 					return false;
 				}
@@ -104,9 +104,9 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 					PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 					PDO::ATTR_TIMEOUT => 5
 					);
-				$database = new WireDatabasePDO($dsn, $username, $password, $driver_options); 
+				$database = new WireDatabasePDO($dsn, $username, $password, $driver_options);
 				$database->setDebugMode($this->wire('config')->debug);
-				$this->database = $database;			
+				$this->database = $database;
 			} catch(Exception $e) {
 				if (!count($_POST)) {
 					$this->error('Setting an external database failed: '.$e->getMessage());
@@ -131,10 +131,10 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// set_error_handler(function($errno, $errstr) {throw new Exception($errstr, $errno);});
 
 		if (!filter_var($host, FILTER_VALIDATE_IP)) {
-			$_host = gethostbyname($host);	
+			$_host = gethostbyname($host);
 			if (empty($_POST) && $_host == $host) $this->error("Unable to translate '$host' to valid IP Adress (IPv4)");
 			else if (empty($_POST) && !filter_var($_host, FILTER_VALIDATE_IP)) $this->error('Invalid IPv4 syntax for host');
-			else $host = $_host;	
+			else $host = $_host;
 		}
 		if (!empty($this->errors(array('array')))) return false;
 
@@ -219,7 +219,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			$return = $this->getTableRow($field,$value->value);
 		}
 		return $return;
-		
+
 	}
 
 	public function getInputfield(Page $page, Field $field) {
@@ -227,7 +227,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			$inputfields = $e->return;
 			$e->return = $inputfields->remove('defaultValue');
 		});
-		
+
 		// get (set default) name of Inputfieldtype
 		$class = ($field->input_type)?$field->input_type:'InputfieldSelect';
 		// set Inputfield
@@ -246,7 +246,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			$inputfield->textformatters = array('TextformatterMarkdownExtra');
 			$inputfield->markupText = "Field: *$field->name* doesn't provide selectable options. Check field settings!";
 			return $inputfield;
-		}	
+		}
 
 		// field required
 		if ($field->required && !$field->requiredIf) {
@@ -264,10 +264,17 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		else if (array_key_exists(0, $options) && $class == 'InputfieldSelect') $inputfield->addOption('','&nbsp;');
 
 		foreach($options as $optval => $label) {
-			$array = $optval == $page->{$field->name}->value? array('selected' => 'selected') : array();
+			$array = array();
+			if($page->{$field->name} && $page->{$field->name}->value) {
+				$optval == $page->{$field->name}->value;
+				$array = array('selected' => 'selected');
+			}
 			$inputfield->addOption($optval, $this->label($label, $optval, $page, $field), $array);
 		}
-		$inputfield->attr('value', (string) $page->{$field->name}->value);
+
+		if($page->{$field->name} && $page->{$field->name}->value) {
+			$inputfield->attr('value', (string) $page->{$field->name}->value);
+		}
 
 		return $inputfield;
 	}
@@ -283,12 +290,12 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		if(!$this->database||!in_array($table,$this->database->getTables())) return array();
 		$columns = array();
 		$table = $this->database->escapeTable($table);
-		$sql = "SHOW COLUMNS FROM $table"; 			
+		$sql = "SHOW COLUMNS FROM $table";
 		$query = $this->database->query($sql);
 		if(!$query->rowCount()) return array();
 		$rows = $query->fetchAll();
 		foreach($rows as $row) $columns[] = $row['Field'];
-		return $columns; 	
+		return $columns;
 	}
 
 	/**
@@ -362,7 +369,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// get columns array
 		$columns = $this->getDatabaseColumns($table);
 
-		// we need minimum one inttype column 
+		// we need minimum one inttype column
 		foreach ($columns as $column) {
 			if ($this->isIntColumn($table,$column)) $intcolumn = $column; break;
 		}
@@ -381,7 +388,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		else if(!in_array($value,$columns)) return false;
 
 		$options = array();
-		
+
 		$dir = ((bool)$dir)?'DESC':'ASC';
 		$order = ($order)?$order:$label;
 		$order = $this->database->escapeCol($order);
@@ -433,7 +440,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 	public function getSingleValue(Field $field, $value) {
 		$new = new SelectExtOption();
-		$new->value = ($value !== null)?(int)$value:null;	
+		$new->value = ($value !== null)?(int)$value:null;
 		$row = $this->getTableRow($field,$new->value);
 		if (!$row) return new SelectExtOption();
 		foreach ($row as $key => $value) {
@@ -490,7 +497,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		}
 		return $return;
 	}
-	
+
 	public function ___getConfigInputfields(Field $field) {
 
 		$inputfields = parent::___getConfigInputfields($field);
@@ -502,7 +509,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			$f = $this->modules->get("InputfieldMarkup");
 			$f->label = $this->_('Usage');
 			// call textformatter before wrapping
-			$this->modules->get('TextformatterMarkdownExtra')->format($markup); 
+			$this->modules->get('TextformatterMarkdownExtra')->format($markup);
 			$f->markupText = "<div style=\"padding:0 16px; border-left: 16px solid #29c4bc;\"><strong>README.md</strong><hr/>$markup</div>";
 			$f->collapsed = Inputfield::collapsedYes;
 			$inputfields->append($f);
@@ -616,8 +623,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			if ($this->isIntColumn($field->option_table,$value)) $f->addOption($value, $value);
 		}
 		if ($this->database && $field->option_table && !count($f->getOptions()) && !count($_POST)) $f->error("Only tables with columns of type 'integer' allowed!");
-		if (!$field->option_value) $f->addOption(null, 'no column selected!',array('selected'=>'selected'));		
-		$f->columnWidth = 34; 
+		if (!$field->option_value) $f->addOption(null, 'no column selected!',array('selected'=>'selected'));
+		$f->columnWidth = 34;
 		$fieldset->append($f);
 
 		// multilanguage environment
@@ -631,7 +638,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->description = $this->_("Choose from all columns.");
 		if (!$field->option_label) $f->addOption(null, 'no column selected!',array('selected'=>'selected'));
 		if ($columns) foreach ($columns as $label) $f->addOption($label, $label);
-		$f->columnWidth = 33; 
+		$f->columnWidth = 33;
 		$fieldset->append($f);
 
 		// option label column (other languages)
@@ -671,7 +678,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->attr('name', 'filter_column');
 		$f->attr('value', $field->filter_column);
 		if ($columns) foreach ($columns as $filtercol) $f->addOption($filtercol, $filtercol);
-		$f->columnWidth = 33; 
+		$f->columnWidth = 33;
 		$fieldset->append($f);
 
 		// filter selector
@@ -681,7 +688,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->attr('value', $field->filter_selector);
 		$selectors = array('=', '<', '>', '>=', '<=', '<>', '!=', ' LIKE ',' NOT LIKE ');
 		foreach ($selectors as $selector) $f->addOption($selector, $selector);
-		$f->columnWidth = 34; 
+		$f->columnWidth = 34;
 		$fieldset->append($f);
 
 		// filter value
@@ -689,7 +696,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->label = $this->_("Value");
 		$f->attr('name', 'filter_value');
 		$f->attr('value', $field->filter_value);
-		$f->columnWidth = 33; 
+		$f->columnWidth = 33;
 		$fieldset->append($f);
 
 		// option orderby
@@ -737,27 +744,27 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$options = $this->options($field);
 		if(!empty($options) && $field->input_type && $f = $this->wire('modules')->get($field->input_type)) {
 			$f->optionColumns = $field->optionColumns? $field->optionColumns:null;
-			$f->attr('name', 'init_value'); 
+			$f->attr('name', 'init_value');
 			$f->label = $this->_('What options do you want pre-selected? (if any)');
 
 			$f->collapsed = $field->option_value && $field->option_label? Inputfield::collapsedBlank : Inputfield::collapsedYes;;
-			$f->description = sprintf($this->_('This field also serves as a preview of your selected input type (%s) and options.'), $field->input_type); 
+			$f->description = sprintf($this->_('This field also serves as a preview of your selected input type (%s) and options.'), $field->input_type);
 			// allow no pre-selection if value 0 is selectable
 			if (array_key_exists(0, $options) && $f instanceof InputfieldSelectMultiple === false) {
 				$label = $field->input_type == 'InputfieldRadios'? '*no pre-selection*':'&nbsp;';
 				$f->addOption('',$label);
 			}
 			foreach($options as $value => $label) {
-				$f->addOption($value, $label); 
+				$f->addOption($value, $label);
 			}
-			$f->attr('value', $field->init_value); 
+			$f->attr('value', $field->init_value);
 			if(!$field->required) {
 				$f->notes = $this->_('Please note: your selections here do not become active unless a value is *always* required for this field. See the "required" option on the Input tab of your field settings.');
 			} else {
-				$f->notes = $this->_('This feature is active since a value is always required.'); 
+				$f->notes = $this->_('This feature is active since a value is always required.');
 			}
 			$f->showIf = "option_value!='',option_label!=''";
-			$inputfields->add($f); 
+			$inputfields->add($f);
 		}
 		// no selectable options provided
 		else if ($field->option_table && $field->option_lable && $field->option_value && !count($_POST) && empty($options))  {
@@ -790,7 +797,7 @@ class SelectExtOption extends WireData {
 	public function set($key, $value) {
 		if(in_array($key,array('value','label','row','data','options'))) {
 			if($key == 'data') throw new WireException("'data' property is reserved by WireData class. (array where get/set properties are stored)");
-			// validation of label ? 
+			// validation of label ?
 			if($key == 'value' && !is_null($value) && !is_int($value)) throw new WireException("SelectExtOption object only accepts integer (int) as value property");
 			if($key == ('row'|'options') && !is_array($value)) throw new WireException("SelectExtOption object only accepts arrays as '$key' property");
 		}
