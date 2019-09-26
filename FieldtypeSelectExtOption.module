@@ -264,10 +264,17 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		else if (array_key_exists(0, $options) && $class == 'InputfieldSelect') $inputfield->addOption('','&nbsp;');
 
 		foreach($options as $optval => $label) {
-			$array = $optval == $page->{$field->name}->value? array('selected' => 'selected') : array();
+			$array = array();
+			if($page->{$field->name} && $page->{$field->name}->value) {
+				$optval == $page->{$field->name}->value;
+				$array = array('selected' => 'selected');
+			}
 			$inputfield->addOption($optval, $this->label($label, $optval, $page, $field), $array);
 		}
-		$inputfield->attr('value', (string) $page->{$field->name}->value);
+
+		if($page->{$field->name} && $page->{$field->name}->value) {
+			$inputfield->attr('value', (string) $page->{$field->name}->value);
+		}
 
 		return $inputfield;
 	}
