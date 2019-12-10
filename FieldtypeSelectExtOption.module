@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 1.4.2 2019-10-03
+ * @version 1.4.3 2019-12-10
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -39,6 +39,7 @@
  * @since 1.4.0 - fixed bug: render select, apply selected attribute - removed changes from version 1.3.9 - 2018-06-13
  * @since 1.4.1 - added config field to define return of SelectExtOption::__toString() - 2019-06-20
  * @since 1.4.2 - fixed bug #12 thanks @tiefenb - 2019-10-03
+ * @since 1.4.3 - fixed bug after changes in InputfieldSelect::renderOptions() since PW 3.0.140 - 2019-12-10
  *
  */
 
@@ -47,7 +48,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 142,
+			'version' => 143,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -235,9 +236,11 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$inputfield = $this->modules->get($class);
 
 		// InputfieldSelect::isOptionSelected() returns true since PHP::in_array(0, array('')) returns true (if not strict)
-		// we need to hook in render() to allow the value (int) 0
+		// we need to hook in render() to allow the value (int) 0 and to set the value attribute (int)
 		$this->addHookBefore("InputfieldSelect::render", function ($e) {
 			if ($e->object->isEmpty() && $e->object instanceof InputfieldHasArrayValue == true) $e->object->attr('value', array());
+			// get int value and set attribute
+			$e->object->setAttribute('value', $e->object->intValue);
 		});
 		// get the options array
 		$options = $this->options($field);
@@ -269,8 +272,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			$array = $optval == $value? array('selected' => 'selected') : array();
 			$inputfield->addOption($optval, $this->label($label, $optval, $page, $field), $array);
 		}
-		if ($value) $inputfield->attr('value', (string) $value);
-
+		// we set the value attribute (int) via hook to prevent that the value is taken from __toString()
+		$inputfield->set('intValue', $value);
 		return $inputfield;
 	}
 
