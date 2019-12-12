@@ -1,33 +1,36 @@
 FIELDTYPE SELECT EXTERNAL OPTION
 ================================
 
-Fieldtype which generates the options for a Select Inputfield from *any* table in *any* (accessible) database not only PW-Tables or PW-Fields. Define the source table, columns (to pull value & label) and the preferred Inputfieldtype (Select, Radios, Checkboxes SelectMultiple or ASMSelect) in field settings. Access to all values in the corresponding row of the source table via API. Frontend safe.
+Fieldtype which generates the options for a Select Inputfield from *any* MYSQL table in *any* (accessible) database. Define the source table, columns (to pull value & label) and the preferred Inputfieldtype (Select, Radios, Checkboxes SelectMultiple or ASMSelect) in field settings. Access to all values in the corresponding row of the source table via API.
 
 ## Create a new field
 + Step 1: Create a new field select fieldtype **SelectExtOption**.
 + Step 2: Define options under tab **Details**
 + Step 3: Save. Done!
 
+---
+
 ## Settings
 ![Screenshot](https://raw.githubusercontent.com/kixe/FieldtypeSelectExtOption/master/screenshot.jpg)
 
-+ #### Inputfieldtype
-Fieldtype **SelectExtOption** is compatible with the following Inputfieldtypes. You maybe need to adapt InputfieldPage to make all the options available.
+### Inputfieldtype
+Fieldtype **SelectExtOption** is compatible with the following Inputfieldtypes. You maybe need to adapt InputfieldPage to make all the options available.  
 
- + InputfieldSelect
- + InputfieldRadios
- + InputfieldCheckboxes
- + InputfieldSelectMultiple
- + InputfieldAsmSelect
- + InputfieldSelectMultipleTransfer [**(note)**](#multitransfer)
++ InputfieldSelect
++ InputfieldRadios
++ InputfieldCheckboxes
++ InputfieldSelectMultiple
++ InputfieldAsmSelect
 
-*note: InputfieldAsmSelect selections are sortable. 3d party modules maybe supported too.*    
-Have a look here: [**Developers Note**](#devnote).
+*Note:  
+	- InputfieldAsmSelect selections are sortable.  
+	- 3d party modules maybe supported too.    
+	[Read more ...](#devnote)*
 
-+ #### Source Table
+### Source Table
 Choose any datatable in the database including those which are not depending to Processwire. **required**.
 
-+ #### Option Value
+### Option Value
 Select a column of the source datatable to get the value for the option tag.  
 Only Integer types allowed. (*This Class extends FieldtypeMulti which stores values as int(11)*.)  
 Default column or column if not selected is always the first column of the table.  
@@ -35,22 +38,23 @@ Default column or column if not selected is always the first column of the table
     
     *note: Option will overwrite the preceding option with same value while generating the select. Unique values recommended.*
 
-+ #### Option Label
+### Option Label
 Select a column of the source datatable to get the label for the option tag.  
     &lt;option&gt;**Option Label**&lt;/option&gt;  
 All types allowed.
 Default label or label if not selected same as **Option Value**.
 
-+ #### Filter
+### Filter
 Small Filter to limit the options if needed. Adds a **WHERE** condition to the **SELECT** statement 
 which pulls the options from the datatable. Function filter() is hookable.
 
-+ #### Order by Label
+### Order by Label
 Options are ordered by **Option Label**. Select to order by any other column. 
 
-+ #### Order Descending
+### Order Descending
 Order is Ascending by default. Check to switch to **Descending**
 
+---
 
 ## API 
 
@@ -194,39 +198,14 @@ array (size=2)
 
 ```
 
-## Developers Note<a id="devnote"></a>
-3d party Inputfieldtypes are supported too, if they are subclasses of **InputfieldSelect**. Furthermore they should be added in settings of **InputfieldPage** module. No guarantees that these Inputfieldtypes will work as expected.  
+
+<h2 name="multitransfer" id="multitransfer">Developers Note</h2>
+**3d party Inputfieldtypes** are supported too, if they are subclasses of **InputfieldSelect**. Furthermore they should be added in settings of **InputfieldPage** module. No guarantees that these Inputfieldtypes will work as expected.  
 Please test carefully.  
 Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules/inputfield-chosen-select/).
 
-<a id="multitransfer"></a>[InputfieldSelectMultipleTransfer](http://modules.processwire.com/modules/inputfield-select-multiple-transfer/) will be supported after removing the '&gt;' in the selector string of javascript file.
+[InputfieldSelectMultipleTransfer](http://modules.processwire.com/modules/inputfield-select-multiple-transfer/) will be supported after removing the '&gt;' in the selector string of javascript file.
 (Line 3 and 19 InputfieldSelectMultipleTransfer.js)
-
-## Changelog
-+ **1.1.3** function filter() is hookable  
-   filter() returns the WHERE clause which will be added to the SELECT command.  
-   You can specify more than one condition using AND or OR operators.  
-+ **1.1.6** function options() to get the array of all possible value/label pairs
-+ **1.1.7** all options provided as property
-+ **1.1.8** support for other databases and external hosts set in field settings
-+ **1.1.9** corrected translatable strings
-+ **1.2.0** changed Version to make available for PW 3.0
-+ **1.2.1** fixed namespace issue (selectable Inputfields)
-+ **1.2.3** - added config field for initial selection (default value) - 2017-02-12
-+ **1.2.4** - added config field for other language labels - 2017-02-20
-+ **1.2.5** - fixed bug added filter to function getTableRow(), allow 0 as value (data) - 2017-03-01
-+ **1.2.6** - allow no pre-selection if value 0 is selectable - 2017-03-02
-+ **1.2.7** - modified field render and added error message in case of an empty options array - 2017-03-03
-+ **1.2.8** - fixed multilanguage bug, fixed issues related to allowance of 0 values as selectable option - 2017-03-03
-+ **1.2.9** - added hookable function label() - 2017-03-03
-+ **1.3.0** - modified arguments of function label() - 2017-03-06
-+ **1.3.1** - added hook to remove InputfieldSelect::defaultValue doubled by init_value - 2017-04-19
-+ **1.3.2** - fixed issue: quick exit of getTableRow() if external database connection fails - 2017-07-25
-+ **1.3.3** - fixed issues: setting default port to external db, return value of of getDatabaseColumns - 2017-07-25
-+ **1.3.4** - better error handling - external databases - 2017-07-25
-+ **1.3.5** - modified arguments of function label() - 2017-08-28
-+ **1.3.6** - fixed bug in function options() - 2017-10-15
-+ **1.4.1** - added config field to define return of SelectExtOption::__toString() - 2019-06-20
 
 ## Links
 + [Support Board processwire.com](https://processwire.com/talk/topic/9320-fieldtype-select-external-option/)
