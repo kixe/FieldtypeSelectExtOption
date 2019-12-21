@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 1.4.4 2019-12-11
+ * @version 1.4.5 2019-12-21
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -41,6 +41,7 @@
  * @since 1.4.2 - fixed bug: #12 thanks @tiefenb - 2019-10-03
  * @since 1.4.3 - fixed bug: after some changes in InputfieldSelect::renderOptions() since PW 3.0.140 - 2019-12-10
  * @since 1.4.4 - fixed bug: hook of last update affected config inputfields - 2019-12-11
+ * @since 1.4.5 - allow InputfieldToggle - 2019-12-21
  *
  */
 
@@ -49,7 +50,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 144,
+			'version' => 145,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -238,10 +239,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		// InputfieldSelect::isOptionSelected() returns true since PHP::in_array(0, array('')) returns true (if not strict)
 		// we need to hook in render() to allow the value (int) 0 and to set the value attribute (int)
-		$this->addHookBefore("InputfieldSelect::render", function ($e) {
-			// ignore module config fields
-			$field = $this->wire('fields')->get($e->object->name);
-			if (!$field || $field->type != 'FieldtypeSelectExtOption') return;
+		$this->addHookBefore("InputfieldSelect::render", function ($e) use ($field) {
+			if (!$field->name != $e->object->name) return;
 			if ($e->object->isEmpty() && $e->object instanceof InputfieldHasArrayValue == true) $e->object->attr('value', array());
 			// get int value and set attribute
 			$e->object->setAttribute('value', $e->object->intValue);
@@ -527,11 +526,10 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->addOption('InputfieldSelect', 'Select');
 		foreach($this->modules->get("InputfieldPage")->inputfieldClasses as $class) {
 			$module = $this->modules->get($class);
-			if($module instanceof InputfieldSelect) {
-				$label = str_replace("Inputfield", '', $class);
-				if($module instanceof InputfieldHasArrayValue) $label .= "*";
-				$f->addOption($class, $label);
-			}
+			if(!$module instanceof InputfieldSelect && !$module instanceof InputfieldToggle) continue;
+			$label = str_replace("Inputfield", '', $class);
+			if($module instanceof InputfieldHasArrayValue) $label .= "*";
+			$f->addOption($class, $label);
 		}
 		$inputfields->append($f);
 
