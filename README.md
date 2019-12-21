@@ -21,8 +21,10 @@ Fieldtype **SelectExtOption** is compatible with the following Inputfieldtypes. 
 + InputfieldCheckboxes
 + InputfieldSelectMultiple
 + InputfieldAsmSelect
++ InputfieldToggle
 
 *Note:  
+	- InputfieldToggle requires always a value.  
 	- InputfieldAsmSelect selections are sortable.  
 	- 3d party modules maybe supported too.    
 	[Read more ...](#developers-note)*
