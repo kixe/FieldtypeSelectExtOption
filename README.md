@@ -25,7 +25,7 @@ Fieldtype **SelectExtOption** is compatible with the following Inputfieldtypes. 
 *Note:  
 	- InputfieldAsmSelect selections are sortable.  
 	- 3d party modules maybe supported too.    
-	[Read more ...](#devnote)*
+	[Read more ...](#developers-note)*
 
 ### Source Table
 Choose any datatable in the database including those which are not depending to Processwire. **required**.
@@ -150,23 +150,27 @@ $getdata->row(null,'selectorstring');
 Function row() will return a MultipleArray with the stored value(s) as key.
 
 #### Example
-+ Field Settings
 
- + **Inputfieldtype** = 'InputfieldAsmSelect'
- + **Source Table** = 'pages'
- + **Option Value** = 'id'
- + **Option Label** = 'name'
+_Field Settings_
 
-+ Selected Values in Frontend
++ **Inputfieldtype** = 'InputfieldAsmSelect'
++ **Source Table** = 'pages'
++ **Option Value** = 'id'
++ **Option Label** = 'name'
+
+_Selected Values in Frontend_
 
  + 'admin'
  + 'user'
 
-+ Code
- + $getdata = $modules->get('FieldtypeSelectExtOption');
- + $getdata->row();
+_Code_
 
-+ Output
+ ```
+ $getdata = $modules->get('FieldtypeSelectExtOption');
+ $getdata->row();
+ ```
+
+_Output_
 
 ```
 
@@ -199,7 +203,7 @@ array (size=2)
 ```
 
 
-<h2 name="multitransfer" id="multitransfer">Developers Note</h2>
+## Developers Note
 **3d party Inputfieldtypes** are supported too, if they are subclasses of **InputfieldSelect**. Furthermore they should be added in settings of **InputfieldPage** module. No guarantees that these Inputfieldtypes will work as expected.  
 Please test carefully.  
 Working example: [InputfieldChosenSelect](http://modules.processwire.com/modules/inputfield-chosen-select/).
