@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 1.4.8 2019-12-25
+ * @version 1.4.9 2019-12-25
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -45,6 +45,7 @@
  * @since 1.4.6 - fixed render and processInput bugs with InputfieldToggle - 2019-12-21
  * @since 1.4.7 - fixed bug: typo in InputfieldSelect::render hook - 2019-12-24
  * @since 1.4.8 - added language argument to function options() and language sensitive output for toString() - 2019-12-25
+ * @since 1.4.9 - fixed multi value bug, fixed for single values in 1.4.3 - 2019-12-25
  *
  */
 
@@ -53,7 +54,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 148,
+			'version' => 149,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -245,7 +246,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$this->addHookBefore("InputfieldSelect::render", function ($e) use ($field) {
 			if ($field->name != $e->object->name) return;
 			if ($e->object->isEmpty() && $e->object instanceof InputfieldHasArrayValue == true) $e->object->attr('value', array());
-			// get int value and set attribute
+			// get int value or array of int values and set attribute
 			$e->object->setAttribute('value', $e->object->intValue);
 		});
 		// get the options array
@@ -261,7 +262,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// field required
 		if ($field->required && !$field->requiredIf) {
 			// init value (overwrites defaultValue if set)
-			$v = $this->sleepValue($page,$field,$page->$field);
+			$v = $this->sleepValue($page, $field, $page->$field);
 			if (empty($v) && $field->init_value) $page->set($field->name, $field->init_value);
 			// if a defaultValue is set via API
 			else if ($field->defaultValue !== null) {
@@ -277,7 +278,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			$inputfield->addOption($optval, $this->label($label, $optval, $page, $field));
 		}
 		// we set the value attribute (int) via hook to prevent that the value is taken from __toString()
-		$value = empty($page->{$field->name}->value)? null : $page->{$field->name}->value;
+		$value = $this->sleepValue($page, $field, $page->$field);
 		$inputfield->set('intValue', $value);
 		// InputfieldToggle requires a value, the property 'useDeselect' is not provided here
 		// value must be a valid selectable option
@@ -462,8 +463,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		if (!$row) return new SelectExtOption();
 		foreach ($row as $key => $value) {
 			// skip reserved words
-			if (in_array($key,array('value','label','row','data','options','toString'))) continue;
-			$new->set($key,$value);
+			if (in_array($key, array('value','label','row','data','options','toString'))) continue;
+			$new->set($key, $value);
 		}
 		if ($field->option_output) $new->toString = $field->option_output;
 		$new->row = $row;
