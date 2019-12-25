@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 1.4.7 2019-12-24
+ * @version 1.4.8 2019-12-25
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -44,6 +44,7 @@
  * @since 1.4.5 - allow InputfieldToggle - 2019-12-21
  * @since 1.4.6 - fixed render and processInput bugs with InputfieldToggle - 2019-12-21
  * @since 1.4.7 - fixed bug: typo in InputfieldSelect::render hook - 2019-12-24
+ * @since 1.4.8 - added language argument to function options() and language sensitive output for toString() - 2019-12-25
  *
  */
 
@@ -52,7 +53,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 147,
+			'version' => 148,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -264,7 +265,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			if (empty($v) && $field->init_value) $page->set($field->name, $field->init_value);
 			// if a defaultValue is set via API
 			else if ($field->defaultValue !== null) {
-				if (array_key_exists($field->defaultValue, $this->options($field))) $page->set($field->name, $field->defaultValue);
+				if (array_key_exists($field->defaultValue, $options)) $page->set($field->name, $field->defaultValue);
 				else throw new WireException("$field->defaultValue is not a selectable value and therefore can not be used as defaultValue");
 			}
 		}
@@ -336,11 +337,12 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	/**
 	 * Return array of all selectable options, key ≈ (int)optionvalue, value ≈ optionlabel
 	 *
-	 * @param string/int/null/object field
+	 * @param string/int/object $field - Field, field->id, field->name
+	 * @param object $language - Language - default: user language
 	 * @return array
 	 *
 	 */
-	public function options($field = null) {
+	public function options($field = null, Language $language = null) {
 		if (!$field instanceof Field) {
 			$selector = '';
 			if (is_int($field)) $selector = ",id=$field";
@@ -351,13 +353,15 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		}
 		elseif ($field->type != 'FieldtypeSelectExtOption') throw new WireException("Expecting FieldtypeSelectExtOption.");
 		$this->setDatabase($field);
-		// create options array
+		// set language
 		$langID = null;
-		if ($this->wire('modules')->isInstalled("LanguageSupport")) {
-			$defLangID = $this->wire('modules')->get("LanguageSupport")->defaultLanguagePageID;
-			$userLangID = $this->wire('user')->get('language')->id;
-			if ($defLangID != $userLangID && !empty($field->{"option_label_$userLangID"})) $langID ="_$userLangID";
+		if (!$language &&
+			$this->wire('modules')->isInstalled("LanguageSupport") &&
+			!$this->wire('user')->get('language')->isDefault()) {
+			$language = $this->wire('user')->get('language');
 		}
+		if ($language && !empty($field->{"option_label_$language->id"})) $langID = "_$language->id";
+		// create options array
 		$options = $this->getExtOptions($field->option_table,$field->option_value,$field->{"option_label$langID"},$this->filter($field),$field->option_order,$field->option_asc,$field->option_label);
 		return $options;
 	}
@@ -453,24 +457,19 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 	public function getSingleValue(Field $field, $value) {
 		$new = new SelectExtOption();
-		$new->value = ($value !== null)?(int)$value:null;	
-		$row = $this->getTableRow($field,$new->value);
+		$new->value = $value !== null? (int) $value : null;	
+		$row = $this->getTableRow($field, $new->value);
 		if (!$row) return new SelectExtOption();
 		foreach ($row as $key => $value) {
 			// skip reserved words
-			if (in_array($key,array('value','label','row','data','options'))) continue;
+			if (in_array($key,array('value','label','row','data','options','toString'))) continue;
 			$new->set($key,$value);
 		}
 		if ($field->option_output) $new->toString = $field->option_output;
 		$new->row = $row;
 		$new->options = $this->options($field);
-		$langID = null;
-		if ($this->wire('modules')->isInstalled("LanguageSupport")) {
-			$defLangID = $this->wire('modules')->get("LanguageSupport")->defaultLanguagePageID;
-			$userLangID = $this->wire('user')->get('language')->id;
-			if ($defLangID != $userLangID && !empty($field->{"option_label_$userLangID"})) $langID ="_$userLangID";
-		}
-		$new->label = $field->{"option_label$langID"}? $row[$field->{"option_label$langID"}]:reset($row);
+		$new->label = $new->options[$new->value];
+		// $new->label = $field->{"option_label$langID"}? $row[$field->{"option_label$langID"}]:reset($row);
 		return $new;
 	}
 
@@ -643,7 +642,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$otherLanguagePageIDs = $this->modules->isInstalled("LanguageSupport")? $this->modules->get("LanguageSupport")->otherLanguagePageIDs:null;
 		// option label column (default language)
 		$f = $this->modules->get("InputfieldSelect");
-		$appendLabelText = $otherLanguagePageIDs?  " (default)":'';
+		$langName = $this->wire('languages')->getDefault()->name;
+		$appendLabelText = $otherLanguagePageIDs?  " (default language)":'';
 		$f->label = $this->_("Option Label$appendLabelText");
 		$f->attr('name', 'option_label');
 		$f->attr('value', $field->option_label);
@@ -660,7 +660,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			foreach ($otherLanguagePageIDs as $otherLanguagePageID) {
 				$langName = $this->wire('languages')->get($otherLanguagePageID)->name;
 				$f = $this->modules->get("InputfieldSelect");
-				$f->label = $this->_("Option Label ($langName)");
+				$f->label = sprintf($this->_("Option Label (%s)"),$langName);
 				$f->attr('name', "option_label_$otherLanguagePageID");
 				$f->attr('value', $field->{"option_label_$otherLanguagePageID"});
 				$f->description = $this->_("Choose from all columns.");
@@ -730,8 +730,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->label = $this->_("Order Direction");
 		$f->attr('name', 'option_asc');
 		($field->option_asc)?$f->attr('value', $field->option_asc):$f->attr('value', 0);
-		$f->addOption(0,"Ascending");
-		$f->addOption(1,"Descending");
+		$f->addOption(0,$this->_("Ascending"));
+		$f->addOption(1,$this->_("Descending"));
 		$f->collapsed = Inputfield::collapsedYes;
 		$f->showIf = "option_value!=''";
 		$inputfields->append($f);
@@ -740,16 +740,16 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f = $this->modules->get("InputfieldSelect");
 		$f->label = $this->_("Output");
 		$f->attr('name', 'option_output');
-		$f->attr('value', $field->option_output);
+		$f->attr('value', $field->option_output? $field->option_output : 'value');
 		$f->description = $this->_("Select a property for direct output `__toString()`.");
-		$f->notes = $this->_("Default: 'Option Value' according to selection above.");
-		if ($columns) foreach ($columns as $out) {
-			// disallow reserved properties
-			if (in_array($out, array('value','label','row','data','options'))) continue;
-			$f->addOption($out, $out);
-		}
+		$labelLabel = $otherLanguagePageIDs? $this->_('label (language sensitive)') : 'label';
+		$f->addOption($this->_('previously set'), array('value' => 'value', 'label' => $labelLabel));
+		// disallow reserved properties
+		if ($columns) $columns = array_diff($columns, array('value','label','row','data','options','toString'));
+		$f->addOption($this->_('table columns'), array_combine($columns, $columns));
 		$f->collapsed = Inputfield::collapsedYes;
 		$f->showIf = "option_value!=''";
+		$f->required = true;
 		$inputfields->append($f);
 
 		// initial selection field preview
@@ -798,7 +798,7 @@ class SelectExtOption extends WireData {
 	 */
 	protected $data = array();
 
-	public function __construct() {
+	public function __construct($value = null) {
 		$this->set('value', null);
 		$this->set('label', null);
 		$this->set('toString', 'value');
@@ -822,6 +822,8 @@ class SelectExtOption extends WireData {
 
 	// magic patch by teppo replaces hook
 	public function __toString() {
+		// get label (language support)
+		if ($this->toString == 'label') return $this->options[$this->value];
 		return (string) $this->{$this->toString};
     }
 }
