@@ -1,4 +1,4 @@
-<?php
+<?php namespace ProcessWire;
 
 /**
  * ProcessWire Module Fieldtype Select External Option 
@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 1.4.9 2019-12-25
+ * @version 2.0.1 2020-01-11
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -46,6 +46,8 @@
  * @since 1.4.7 - fixed bug: typo in InputfieldSelect::render hook - 2019-12-24
  * @since 1.4.8 - added language argument to function options() and language sensitive output for toString() - 2019-12-25
  * @since 1.4.9 - fixed multi value bug, fixed for single values in 1.4.3 - 2019-12-25
+ * @since 2.0.0 - major update, switched to ProcessWire namespace, added functions for better import and export, cleanup - 2019-12-28
+ * @since 2.0.1 - extended filter, use pipes to create OR groups - 2020-01-11
  *
  */
 
@@ -54,14 +56,14 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 149,
+			'version' => 201,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
 			'license' => 'GNU-GPLv3',
 			'hreflicense' => 'http://www.gnu.org/licenses/gpl-3.0.html',
 			'icon' => 'database',
-			'requires' => 'ProcessWire>=2.5.0'
+			'requires' => 'ProcessWire>=3.0.123'
 		);
 	}
 	
@@ -108,9 +110,9 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 					return false;
 				}
 				$driver_options = array(
-					PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES '$charset'",
-					PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-					PDO::ATTR_TIMEOUT => 5
+					\PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES '$charset'",
+					\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+					\PDO::ATTR_TIMEOUT => 5
 					);
 				$database = new WireDatabasePDO($dsn, $username, $password, $driver_options); 
 				$database->setDebugMode($this->wire('config')->debug);
@@ -194,7 +196,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$sql = "SELECT * FROM `$table` WHERE $valuecolumn = '$value'$filter";
 		$query = $this->database->query($sql);
 		if(!$query->rowCount()) return array();
-		return $query->fetch(PDO::FETCH_ASSOC); // single return, unique value
+		return $query->fetch(\PDO::FETCH_ASSOC); // single return, unique value
 	}
 
 	/**
@@ -241,14 +243,21 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// set Inputfield
 		$inputfield = $this->modules->get($class);
 
-		// InputfieldSelect::isOptionSelected() returns true since PHP::in_array(0, array('')) returns true (if not strict)
-		// we need to hook in render() to allow the value (int) 0 and to set the value attribute (int)
-		$this->addHookBefore("InputfieldSelect::render", function ($e) use ($field) {
+		$this->addHookBefore("Inputfield::render", function ($e) use ($field) {
 			if ($field->name != $e->object->name) return;
-			if ($e->object->isEmpty() && $e->object instanceof InputfieldHasArrayValue == true) $e->object->attr('value', array());
 			// get int value or array of int values and set attribute
-			$e->object->setAttribute('value', $e->object->intValue);
+			$e->object->attr('value', $e->object->intValue);
+			/**
+			 * InputfieldSelect::isOptionSelected() returns true since PHP::in_array(0, array('')) returns true (if not strict)
+			 * we need to hook in render() to allow the value (int) 0
+			 * @deprecated solved since PW 3.0.126
+			 * @requires PW >= 3.0.126
+			 * https://github.com/processwire/processwire/commit/2c3e949d6ef836ef616a6636c345d1b740312f2b#diff-79808b1661a74c0668ee6157537ae478
+			 * the foolowing code will be going away
+			 */
+			if ($e->object->isEmpty() && $e->object instanceof InputfieldHasArrayValue == true) $e->object->attr('value', array());
 		});
+
 		// get the options array
 		$options = $this->options($field);
 		// any selectable options provided?
@@ -257,12 +266,15 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			$inputfield->textformatters = array('TextformatterMarkdownExtra');
 			$inputfield->markupText = "Field: *$field->name* doesn't provide selectable options. Check field settings!";
 			return $inputfield;
-		}	
+		}
+
+		// prevent inputfield taking value from toString()
+		$v = $this->sleepValue($page, $field, $page->$field);
+		$inputfield->set('intValue', $v);
 
 		// field required
 		if ($field->required && !$field->requiredIf) {
 			// init value (overwrites defaultValue if set)
-			$v = $this->sleepValue($page, $field, $page->$field);
 			if (empty($v) && $field->init_value) $page->set($field->name, $field->init_value);
 			// if a defaultValue is set via API
 			else if ($field->defaultValue !== null) {
@@ -277,9 +289,6 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		foreach($options as $optval => $label) {
 			$inputfield->addOption($optval, $this->label($label, $optval, $page, $field));
 		}
-		// we set the value attribute (int) via hook to prevent that the value is taken from __toString()
-		$value = $this->sleepValue($page, $field, $page->$field);
-		$inputfield->set('intValue', $value);
 		// InputfieldToggle requires a value, the property 'useDeselect' is not provided here
 		// value must be a valid selectable option
 		if ($class == 'InputfieldToggle') {
@@ -287,9 +296,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 				reset($options);
 				$value = $field->init_value? $field->init_value : key($options);
 				$page->setAndSave($field->name, $value);
-			}	
-			// InputfieldToggle expects the value and nothing else returned from magic __toString()
-			if ($page->{$field->name} instanceof SelectExtOption) $page->{$field->name}->set('toString', $field->option_value);			
+			}		
 		}
 		return $inputfield;
 	}
@@ -415,7 +422,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$query = $this->database->prepare("SELECT * FROM `$table` $filter ORDER BY `$order` $dir");
 		$query->execute();
 		if(!$query->rowCount()) return null;
-        while($row = $query->fetch(PDO::FETCH_ASSOC)) $options[$row[$value]] = strlen($row[$label])? $row[$label] : $row[$defaultLabel];
+        while($row = $query->fetch(\PDO::FETCH_ASSOC)) $options[$row[$value]] = strlen($row[$label])? $row[$label] : $row[$defaultLabel];
         return $options;
 	}
 
@@ -445,9 +452,22 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		if(!$field->filter_column||!$field->filter_selector||!$field->filter_value) return false;
 		// valid operator?
 		$operators = array(' LIKE ',' NOT LIKE ');
+		// we use pipe to allow OR
+		if (strpos($field->filter_value, '|')) {
+			$values = explode('|', $field->filter_value);
+			foreach ($values as &$v) {
+				$v = $this->database->quote($v);
+			}
+			unset($v);
+		} else $values = array($this->database->quote($field->filter_value));
+
 		if(!$this->database->isOperator($field->filter_selector) && !in_array($field->filter_selector,$operators))  return false;
-		// escape column, quote value,
-		return '`'.$this->database->escapeCol($field->filter_column).'`'.$field->filter_selector.$this->database->quote($field->filter_value);
+		// escape column, compose filter string
+		$return = '';
+		foreach ($values as $value) {
+			$return .= '`'.$this->database->escapeCol($field->filter_column).'`'.$field->filter_selector.$value. ' OR ';
+		}
+		return rtrim($return, ' OR ');
 	}
 
 	public function getBlankValue(Page $page, Field $field) {
@@ -470,7 +490,6 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$new->row = $row;
 		$new->options = $this->options($field);
 		$new->label = $new->options[$new->value];
-		// $new->label = $field->{"option_label$langID"}? $row[$field->{"option_label$langID"}]:reset($row);
 		return $new;
 	}
 
@@ -509,6 +528,106 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			}
 		}
 		return $return;
+	}
+
+	/**
+	 * Given a value, return an portable version of it
+	 *
+	 * @param Page $page
+	 * @param Field $field
+	 * @param string|int|float|array|object|null $value
+	 * @param array $options Optional settings to shape the exported value, if needed:
+	 *  - `human` (boolean): When true, Fieldtype may optionally emphasize human readability over importability 
+	 *  - `language` (null|int|object): Language or language id
+	 * @return int|string|array
+	 *
+	 */
+	public function ___exportValue(Page $page, Field $field, $value, array $options = array()) {
+		$defaultOptions = array(
+			'human' => false,
+			'language' => null
+		);
+		$options = array_merge($defaultOptions, $options);
+
+		// default return int (single) or array of int (multiple)
+		if (!$options['human'] || $value->toString == 'value') return $this->sleepValue($page, $field, $value);
+
+		// get language
+		$language = null;
+		if ($this->wire('modules')->isInstalled("LanguageSupport") && $options['language']) {
+			if (!$options['language'] instanceof Language) $language = $this->wire('languages')->get($options['language']);
+			else $language = $options['language'];
+		}
+
+		// return label or array of labels (language sensitive)
+		if ($language->id && $value->toString == 'label') {
+			if ($value instanceof SelectExtOption) return $this->options($field, $language)[$value->value];
+			else {
+				$return = [];
+				foreach ($value as $v) $return[] = $this->options($field, $language)[$v->value];
+				return $return;
+			}
+		}
+
+		// return human readable string or array of strings
+		if ($value instanceof SelectExtOption) return "$value";
+		else {
+			$return = [];
+			foreach ($value as $v) $return[] = "$v";
+			return $return;
+		}
+	}
+
+	/**
+	 * get a saveable value (array of selectable option values [int]), by searching for matches of $search in label columns or any column
+	 * $page->set('myfield', $return) or $page->setAndSave('myfield', $return)
+	 *
+	 * @param Field $field
+	 * @param string|int|float|array $search
+	 * @param int $full 
+	 *  - 0: searching in label columns only (multilanguage if set)
+	 *  - 1: full search in all columns
+	 * @return array
+	 *
+	 */
+	public function getSaveableValue(Field $field, $search, $full = 0) {
+
+		$this->setDatabase($field);
+
+		// search for labels
+		if (!$full) {
+			$columns = [$field->option_label];
+			$otherLanguagePageIDs = $this->modules->isInstalled("LanguageSupport")? $this->modules->get("LanguageSupport")->otherLanguagePageIDs: null;
+			if (!empty($otherLanguagePageIDs)) {
+				foreach ($otherLanguagePageIDs as $lid) {
+					if (empty($field->{"option_label_$lid"})) continue;
+					$columns[] = $field->{"option_label_$lid"};
+				}
+			}
+		}
+
+		// full search
+		else $columns = $this->getDatabaseColumns($field->option_table);
+
+		// compose statement
+		$columnsString = '`' . implode('`,`', $columns) . '`';
+		$filter = $this->filter($field);
+		$filter = ($filter)? "WHERE $filter AND ":'WHERE ';
+		if (is_array($search)) $search = implode("' IN ($columnsString) OR '" , $search);
+		$filter .= "'$search' IN ($columnsString)";
+		$statement = "SELECT * FROM `$field->option_table` $filter";
+
+		// execute statement
+		$query = $this->database->prepare($statement);
+		$query->execute();
+		if(!$query->rowCount()) return null;
+
+		$result = [];
+        while($row = $query->fetch(\PDO::FETCH_ASSOC)) {
+        	$result[] = (int) $row[$field->option_value];
+        }
+        if (empty($result)) return null;
+        return $result;
 	}
 	
 	public function ___getConfigInputfields(Field $field) {
@@ -676,11 +795,9 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// option filter
 		$fieldset = $this->modules->get("InputfieldFieldset");
 		$fieldset->label = $this->_('Filter');
-		$fieldset->description = $this->_("Configure to limit the option list.");
-		$fc=($field->filter_column)?$field->filter_column:'[Column]';
-		$fs=($field->filter_selector)?$field->filter_selector:'[Selector Operator]';
-		$fv=($field->filter_value)?$field->filter_value:'[Value]';
-		$fieldset->notes = $this->_("SELECT * FROM $field->option_table WHERE $fc$fs'$fv'");
+		$fieldset->description = $this->_("Configure to limit the option list. Use pipes to create OR groups.");
+		$filter = $this->filter($field);
+		$fieldset->notes = $this->_("SELECT * FROM $field->option_table WHERE $filter");
 		$fieldset->collapsed = Inputfield::collapsedBlank;
 		$fieldset->showIf = "option_value!=''";
 		$inputfields->add($fieldset);
@@ -821,9 +938,8 @@ class SelectExtOption extends WireData {
 		return parent::get($key);
 	}
 
-	// magic patch by teppo replaces hook
 	public function __toString() {
-		// get label (language support)
+		// get label (language support: current user language)
 		if ($this->toString == 'label') return $this->options[$this->value];
 		return (string) $this->{$this->toString};
     }
