@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 2.0.1 2020-01-11
+ * @version 2.0.5 2020-04-05
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -48,7 +48,10 @@
  * @since 1.4.9 - fixed multi value bug, fixed for single values in 1.4.3 - 2019-12-25
  * @since 2.0.0 - major update, switched to ProcessWire namespace, added functions for better import and export, cleanup - 2019-12-28
  * @since 2.0.1 - extended filter, use pipes to create OR groups - 2020-01-11
- *
+ * @since 2.0.2 - added function getDefaultValue() - 2020-04-04
+ * @since 2.0.3 - removed hook, updated requirement PW version - 2020-04-04
+ * @since 2.0.4 - changed a lot of code for better handling default value and zero vs. null - 2020-04-04
+ * @since 2.0.5 - fixed bug #13 - https://github.com/kixe/FieldtypeSelectExtOption/issues/13 - 2020-04-05
  */
 
 class FieldtypeSelectExtOption extends FieldtypeMulti {
@@ -56,14 +59,14 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 201,
+			'version' => 205,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
 			'license' => 'GNU-GPLv3',
 			'hreflicense' => 'http://www.gnu.org/licenses/gpl-3.0.html',
 			'icon' => 'database',
-			'requires' => 'ProcessWire>=3.0.123'
+			'requires' => 'ProcessWire>=3.0.148'
 		);
 	}
 	
@@ -243,19 +246,32 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// set Inputfield
 		$inputfield = $this->modules->get($class);
 
-		$this->addHookBefore("Inputfield::render", function ($e) use ($field) {
-			if ($field->name != $e->object->name) return;
+		$this->addHookBefore("Inputfield::render", function ($e) use ($field, $page) {
+			// quick exit
+			if ($field->type != $this) return;
+			
+			// set default value
+			$field->defaultValue = $this->getDefaultValue($page, $field);
+
 			// get int value or array of int values and set attribute
 			$e->object->attr('value', $e->object->intValue);
-			/**
-			 * InputfieldSelect::isOptionSelected() returns true since PHP::in_array(0, array('')) returns true (if not strict)
-			 * we need to hook in render() to allow the value (int) 0
-			 * @deprecated solved since PW 3.0.126
-			 * @requires PW >= 3.0.126
-			 * https://github.com/processwire/processwire/commit/2c3e949d6ef836ef616a6636c345d1b740312f2b#diff-79808b1661a74c0668ee6157537ae478
-			 * the foolowing code will be going away
-			 */
-			if ($e->object->isEmpty() && $e->object instanceof InputfieldHasArrayValue == true) $e->object->attr('value', array());
+		});
+
+		/**
+		 * hook for special case:
+		 * - field required
+		 * - InputfieldSelect
+		 * - value 0 is a selectable option
+		 * - 0 is selected
+		 * in this case InputfieldSelect::renderOptions() does not make a difference between 0 and null and provides the 'deselect' option tag. We remove it here
+		 * 
+		 */
+		$this->addHookAfter("InputfieldSelect::render", function ($e) use ($field) {
+			if ($field->type != $this) return;
+			if ($field->required && $e->object->intValue === array(0)) {
+				$string = $e->return;
+				$e->return = str_replace("<option value=''>&nbsp;</option>", '', $string);
+			}
 		});
 
 		// get the options array
@@ -271,20 +287,6 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// prevent inputfield taking value from toString()
 		$v = $this->sleepValue($page, $field, $page->$field);
 		$inputfield->set('intValue', $v);
-
-		// field required
-		if ($field->required && !$field->requiredIf) {
-			// init value (overwrites defaultValue if set)
-			if (empty($v) && $field->init_value) $page->set($field->name, $field->init_value);
-			// if a defaultValue is set via API
-			else if ($field->defaultValue !== null) {
-				if (array_key_exists($field->defaultValue, $options)) $page->set($field->name, $field->defaultValue);
-				else throw new WireException("$field->defaultValue is not a selectable value and therefore can not be used as defaultValue");
-			}
-		}
-		// no init selection and allow unselect if value 0 is selectable and field is not required
-		// @see InputfieldSelect::renderOptions() @var $hasBlankOption
-		else if (array_key_exists(0, $options) && $class == 'InputfieldSelect') $inputfield->addOption('','&nbsp;');
 
 		foreach($options as $optval => $label) {
 			$inputfield->addOption($optval, $this->label($label, $optval, $page, $field));
@@ -476,6 +478,23 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		return $return;
 	}
 
+	/**
+	 * Return the defaultValue property for this field (if set), or null otherwise.
+	 *
+	 * @param object $page
+	 * @param object $field
+	 * @return null|string defaultValue separated by linefeed in multiple
+	 * 
+	 * @see Fieldtype::getDefaultValue(), Field::getDefaultValue(), InputfieldSelect::checkDefaultValue()
+	 *
+	 */
+	public function getDefaultValue(Page $page, Field $field) {
+		if ($field->init_value !== null) {
+			return is_array($field->init_value)? implode("\n", $field->init_value) : "$field->init_value";
+		}
+		return null;
+	}
+
 	public function getSingleValue(Field $field, $value) {
 		$new = new SelectExtOption();
 		$new->value = $value !== null? (int) $value : null;	
@@ -507,12 +526,12 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 	public function wakeupValue(Page $page, Field $field, $value) {
 		if($value === null || empty($value)) return $this->getBlankValue($page,$field);
+		if(!is_array($value)) $value = array($value);
 		$module = $this->modules->get($field->input_type);
 		if(!$module instanceof InputfieldHasArrayValue) return $this->getSingleValue($field,array_pop($value));
 		$return = new WireArray();
 		foreach ($value as $val) $return->set($val,$this->getSingleValue($field,$val));
 		$return->data('options',$this->options($field));
-		// var_dump($return);
 		$return->resetTrackChanges();
 		return $return;
 	}
