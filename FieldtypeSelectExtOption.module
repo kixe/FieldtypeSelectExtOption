@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 2.0.6 2020-04-09
+ * @version 2.0.7 2020-04-09
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -53,6 +53,8 @@
  * @since 2.0.4 - changed a lot of code for better handling default value and zero vs. null - 2020-04-04
  * @since 2.0.5 - fixed bug #13 - https://github.com/kixe/FieldtypeSelectExtOption/issues/13 - 2020-04-05
  * @since 2.0.6 - fixed bug: filter didn't allow zero as value - 2020-04-09
+ * @since 2.0.7 - added constant to limit number of selectable options show error if exceeded - 2020-04-09
+ *
  */
 
 class FieldtypeSelectExtOption extends FieldtypeMulti {
@@ -60,7 +62,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 206,
+			'version' => 207,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -72,6 +74,12 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	}
 	
 	protected $database = null;
+
+	/**
+	 * Max allowed number of options
+	 * 
+	 */
+	const OPTIONSLIMIT = 500;
 
 	/**
 	 * Create a new PDO instance from field settings. set database property
@@ -385,7 +393,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 * @return array(value => label)
 	 *
 	 */
-	protected function getExtOptions($table, $value = false, $label = false, $filter= false, $order = false, $dir = false, $defaultLabel = null) {
+	protected function getExtOptions($table, $value = false, $label = false, $filter = false, $order = false, $dir = false, $defaultLabel = null) {
 
 		// quick exit
 		if (!$this->database) return false;
@@ -416,16 +424,27 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		else if(!in_array($value,$columns)) return false;
 
 		$options = array();
-		
-		$dir = ((bool)$dir)?'DESC':'ASC';
+		// @see getConfigInputfields()
+		if ($dir !== 'LIMIT 1') {
+			$dir = ((bool)$dir === true)? 'DESC':'ASC';
+		}
+
 		$order = ($order)?$order:$label;
 		$order = $this->database->escapeCol($order);
 		// validate/sanitize filterstring
 		$filter = $filter? "WHERE $filter" : '';
+		// $statement = "SELECT * FROM `$table` $filter ORDER BY `$order` $dir LIMIT " . self::OPTIONSLIMIT;
 		$statement = "SELECT * FROM `$table` $filter ORDER BY `$order` $dir";
 		$query = $this->database->prepare($statement);
 		$query->execute();
 		if(!$query->rowCount()) return null;
+		
+		if($query->rowCount() > self::OPTIONSLIMIT) { 
+			$this->error($this->className() . sprintf(': Maximum number (%1$d < %2$d) of selectable options exceeded. Use filter function in field settings to limit.', self::OPTIONSLIMIT, $query->rowCount()));
+			return false;
+		}
+		$this->errors('clear all');
+		
         while($row = $query->fetch(\PDO::FETCH_ASSOC)) $options[$row[$value]] = strlen($row[$label])? $row[$label] : $row[$defaultLabel];
         return $options;
 	}
@@ -453,7 +472,6 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 */
 	protected function ___filter(Field $field) {
 		// all parts set?
-		// var_dump($field->filter_value);
 		if(!$field->filter_column||!$field->filter_selector||$field->filter_value === null) return false;
 		// valid operator?
 		$operators = array(' LIKE ',' NOT LIKE ');
@@ -759,7 +777,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->required = true;
 		$f->attr('value', $field->option_table);
 		if (!$field->option_table) $f->addOption(null, 'no table selected!',array('selected'=>'selected'));
-		if ($this->getExtOptions($field->option_table) === null && !count($_POST)) $f->error('Table doesn\'t contain any data!');
+		// we use $dir for limit to check if one single row exists
+		if ($this->getExtOptions($field->option_table,false,false,false,false,'LIMIT 1') === null && !count($_POST)) $f->error('Table doesn\'t contain any data!');
 		if ($this->database) foreach ($this->database->getTables() as $table) $f->addOption($table, $table);
 		$f->description = $this->_("Choose a table in your database.");
 		$f->columnWidth = 33;
@@ -817,7 +836,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// option filter
 		$fieldset = $this->modules->get("InputfieldFieldset");
 		$fieldset->label = $this->_('Filter');
-		$fieldset->description = $this->_("Configure to limit the option list. Use pipes to create OR groups.");
+		$fieldset->description = $this->_("Configure to filter the option list. Use pipes to create OR groups.");
 		$filter = $this->filter($field);
 		$fieldset->notes = $this->_("SELECT * FROM $field->option_table WHERE $filter");
 		$fieldset->collapsed = Inputfield::collapsedBlank;
