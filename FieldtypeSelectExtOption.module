@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 2.0.7 2020-04-09
+ * @version 2.0.8 2020-12-11
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -54,6 +54,7 @@
  * @since 2.0.5 - fixed bug #13 - https://github.com/kixe/FieldtypeSelectExtOption/issues/13 - 2020-04-05
  * @since 2.0.6 - fixed bug: filter didn't allow zero as value - 2020-04-09
  * @since 2.0.7 - added constant to limit number of selectable options show error if exceeded - 2020-04-09
+ * @since 2.0.8 - added function getSelectorInfo() to distinguish between single and multiple values for selector fields (remove subfield 'count' if single), added function getMatchQuery() to allow searching via label - 2020-12-11
  *
  */
 
@@ -62,7 +63,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 207,
+			'version' => 208,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -670,6 +671,29 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
         return $result;
 	}
 	
+	/**
+	 * Get the database query that matches a Fieldtype table’s data with a given label or value
+	 * currently only equal or unequal is allowed
+	 *
+	 */
+	public function getMatchQuery($query, $table, $subfield, $operator, $value) {
+		if (!is_numeric($value)) $value = $this->getSaveableValue($query->field, $value, 0);
+		if (empty($value)) $value = '';
+		return parent::getMatchQuery($query, $table, $subfield, $operator, $value);
+	}
+
+	/**
+	 * Return array with information about what properties and operators can be used with this field
+	 * 
+	 *
+	 */
+	public function ___getSelectorInfo(Field $field, array $data = array()) {
+		$class = $field->input_type;
+		$module = $this->modules->get($class);
+		if($module instanceof InputfieldHasArrayValue) return parent::___getSelectorInfo($field, $data); 
+		else return Fieldtype::___getSelectorInfo($field, $data);
+	}
+
 	public function ___getConfigInputfields(Field $field) {
 
 		$inputfields = parent::___getConfigInputfields($field);
