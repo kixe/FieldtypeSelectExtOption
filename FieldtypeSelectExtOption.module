@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 2.0.8 2020-12-11
+ * @version 2.0.9 2021-02-13
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -55,6 +55,7 @@
  * @since 2.0.6 - fixed bug: filter didn't allow zero as value - 2020-04-09
  * @since 2.0.7 - added constant to limit number of selectable options show error if exceeded - 2020-04-09
  * @since 2.0.8 - added function getSelectorInfo() to distinguish between single and multiple values for selector fields (remove subfield 'count' if single), added function getMatchQuery() to allow searching via label - 2020-12-11
+ * @since 2.0.9 - force to sort by final label - 2021-02-13
  *
  */
 
@@ -63,7 +64,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 208,
+			'version' => 209,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -298,9 +299,19 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$v = $this->sleepValue($page, $field, $page->$field);
 		$inputfield->set('intValue', $v);
 
-		foreach($options as $optval => $label) {
-			$inputfield->addOption($optval, $this->label($label, $optval, $page, $field));
+		foreach($options as $optval => &$label) $label = $this->label($label, $optval, $page, $field);
+		asort($options); // force to sort by final label
+		// else ksort($options); // sort by key?
+		$inputfield->addOptions($options, true);
+			
+		/**
+		 * attributes needed?
+		 *
+		 foreach ($options as $optval => $label) {
+			$inputfield->addOption($optval, $label, array());
 		}
+		*/
+
 		// InputfieldToggle requires a value, the property 'useDeselect' is not provided here
 		// value must be a valid selectable option
 		if ($class == 'InputfieldToggle') {
@@ -672,8 +683,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	}
 	
 	/**
-	 * Get the database query that matches a Fieldtype table’s data with a given label or value
-	 * currently only equal or unequal is allowed
+	 * Get the database query that matches a Fieldtype table’s data
+	 * translate label to related value (always integer)
 	 *
 	 */
 	public function getMatchQuery($query, $table, $subfield, $operator, $value) {
@@ -684,7 +695,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 	/**
 	 * Return array with information about what properties and operators can be used with this field
-	 * 
+	 * corresponding to the selected Inputfieldtype (single, multiple)
 	 *
 	 */
 	public function ___getSelectorInfo(Field $field, array $data = array()) {
