@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 2.1.0 2021-05-21
+ * @version 2.1.1 2022-01-27
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -57,7 +57,7 @@
  * @since 2.0.8 - added function getSelectorInfo() to distinguish between single and multiple values for selector fields (remove subfield 'count' if single), added function getMatchQuery() to allow searching via label - 2020-12-11
  * @since 2.0.9 - force to sort by final label - 2021-02-13
  * @since 2.1.0 - fixed bug: removed line 841 @see https://processwire.com/talk/topic/9320-fieldtype-select-external-option/?do=findComment&comment=212453 - 2021-02-13
- *
+ * @since 2.1.1 - fixed bug: surround custom filter with brackets - 2022-01-27
  */
 
 class FieldtypeSelectExtOption extends FieldtypeMulti {
@@ -65,7 +65,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 210,
+			'version' => 211,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -458,7 +458,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		}
 		$this->errors('clear all');
 		
-        while($row = $query->fetch(\PDO::FETCH_ASSOC)) $options[$row[$value]] = strlen($row[$label])? $row[$label] : $row[$defaultLabel];
+        while($row = $query->fetch(\PDO::FETCH_ASSOC)) $options[$row[$value]] = strlen((string) $row[$label])? $row[$label] : $row[$defaultLabel];
         return $options;
 	}
 
@@ -503,7 +503,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		foreach ($values as $value) {
 			$return .= '`'.$this->database->escapeCol($field->filter_column).'`'.$field->filter_selector.$value. ' OR ';
 		}
-		return rtrim($return, ' OR ');
+		return '(' . rtrim($return, ' OR ') . ')';
 	}
 
 	public function getBlankValue(Page $page, Field $field) {
