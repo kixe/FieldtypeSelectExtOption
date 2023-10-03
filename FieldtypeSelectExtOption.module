@@ -199,6 +199,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 *
 	 */
 	protected function getTableRow(Field $field, $value) {
+		if ($value === null) return array();
 		if (!$this->setDatabase($field)) return array();
 		$table = $field->option_table;
 		if (!$table) return array();
@@ -561,10 +562,11 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	}
 
 	public function getSingleValue(Field $field, $value) {
+		if ($value === null) return new SelectExtOption();
 		$new = new SelectExtOption();
-		$new->value = $value !== null? (int) $value : null;	
+		$new->value = (int) $value;	
 		$row = $this->getTableRow($field, $new->value);
-		if (!$row) return new SelectExtOption();
+		if (empty($row)) return new SelectExtOption();
 		foreach ($row as $key => $value) {
 			// skip reserved words
 			if (in_array($key, array('value','label','row','data','options','toString'))) continue;
