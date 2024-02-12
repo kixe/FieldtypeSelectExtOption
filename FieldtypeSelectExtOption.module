@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 2.1.2 2022-08-30
+ * @version 2.1.3 2024-02-12
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -59,6 +59,7 @@
  * @since 2.1.0 - fixed bug: removed line 841 @see https://processwire.com/talk/topic/9320-fieldtype-select-external-option/?do=findComment&comment=212453 - 2021-02-13
  * @since 2.1.1 - fixed bug: surround custom filter with brackets - 2022-01-27
  * @since 2.1.2 - extended function row() to retrieve any row by int value independend from a page value - 2022-08-30
+ * @since 2.1.3 - fixed bug: Option list does not take into account 'Order by' and 'Order direction'. - 2024-02-12
  */
 
 class FieldtypeSelectExtOption extends FieldtypeMulti {
@@ -66,7 +67,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 212,
+			'version' => 213,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -333,8 +334,11 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$inputfield->set('intValue', $v);
 
 		foreach($options as $optval => &$label) $label = $this->label($label, $optval, $page, $field);
-		asort($options, SORT_LOCALE_STRING); // force to sort by final label
-		// else ksort($options); // sort by key?
+		if (!$field->option_order) {
+			if ($field->option_asc) arsort($options, SORT_LOCALE_STRING); // sort descending by final label
+			else asort($options, SORT_LOCALE_STRING); // sort ascending by final label
+		}
+		// else ksort($options); // DO NOT SORT, because already sorted by database query "order by"
 		$inputfield->addOptions($options, true);
 			
 		/**
@@ -941,15 +945,17 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// option orderby
 		$f = $this->modules->get("InputfieldSelect");
 		$f->label = $this->_("Order by");
-		$f->description = $this->_("Default: Order by label");
+		$f->description = $this->_("Default: Order by label.");
+		$f->notes = $this->_("Hook in function `___label(\$label, \$value, \$page, \$field)` to modify the label for your needs.");
 		$f->attr('name', 'option_order');
 		$f->attr('value', $field->option_order);
 		if ($columns) foreach ($columns as $ordercol) {
 			if ($ordercol == $field->option_label) continue;
 			$f->addOption($ordercol, $ordercol);
 		}
-		$f->collapsed = Inputfield::collapsedYes;
+		$f->collapsed = Inputfield::collapsedBlank;
 		$f->showIf = "option_value!=''";
+		// $f->columnWidth = 50;
 		$inputfields->append($f);
 
 		// option order asc/ desc
@@ -959,8 +965,9 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		($field->option_asc)?$f->attr('value', $field->option_asc):$f->attr('value', 0);
 		$f->addOption(0,$this->_("Ascending"));
 		$f->addOption(1,$this->_("Descending"));
-		$f->collapsed = Inputfield::collapsedYes;
+		$f->collapsed = $field->option_asc? Inputfield::collapsedBlank : Inputfield::collapsedYes;
 		$f->showIf = "option_value!=''";
+		// $f->columnWidth = 50;
 		$inputfields->append($f);
 
 		// option output
@@ -986,7 +993,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			$f->attr('name', 'init_value'); 
 			$f->label = $this->_('What options do you want pre-selected? (if any)');
 
-			$f->collapsed = $field->option_value && $field->option_label? Inputfield::collapsedBlank : Inputfield::collapsedYes;;
+			$f->collapsed = $field->option_value && $field->option_label? Inputfield::collapsedBlank : Inputfield::collapsedYes;
 			$f->description = sprintf($this->_('This field also serves as a preview of your selected input type (%s) and options.'), $field->input_type); 
 			// allow no pre-selection if value 0 is selectable
 			if (array_key_exists(0, $options) && $f instanceof InputfieldSelectMultiple === false) {
