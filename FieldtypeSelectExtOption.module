@@ -403,6 +403,31 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	}
 
 	/**
+	 * Get options for field of type, without providing a page.
+	 * 
+	 * Usage: 
+	 * 		$field->type->getFieldOptions($field);
+	 *
+	 * @param int|string|Field $field Field id, name or object
+	 * @return array options
+	 *
+	 */
+	public function getFieldOptions($field = null) {
+		if (!$field instanceof Field) {
+			$selector = '';
+			if (is_int($field)) $selector = ",id=$field";
+			elseif (is_string($field)) $selector = ",name=$field";
+			$_field = $field;
+			$field = $this->wire('fields')->get('type=FieldtypeSelectExtOption'.$selector);
+			if (!$field) throw new WireException("Field '$_field' doesn't exist or is not of type FieldtypeSelectExtOption.");
+		}
+		elseif ($field->type != 'FieldtypeSelectExtOption') throw new WireException("Expecting FieldtypeSelectExtOption.");
+		// get the options array
+		$options = $this->options($field);
+		return $options;
+	}
+
+	/**
 	 * Return array of all selectable options, key ≈ (int)optionvalue, value ≈ optionlabel
 	 *
 	 * @param string/int/object $field - Field, field->id, field->name
