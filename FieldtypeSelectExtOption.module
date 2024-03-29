@@ -545,8 +545,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	}
 
 	/**
-	 * Return an existing page value if identical with given value
-	 * workaround to prevent Page::trackChange() triggered by PageComparison::isEqual() resulting in a message that page value has changed even if nothing has changed due to strict object comparison (instance must be identical)
+	 * Return an existing page (data) value if identical with runtime value
+	 * workaround to prevent Page::trackChange() triggered by PageComparison::isEqual() resulting in a message that page value has been changed even if nothing has changed due to strict object comparison (instance must be identical)
 	 *
 	 * @param object $page
 	 * @param object $field
