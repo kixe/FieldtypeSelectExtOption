@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 2.1.5 2024-03-29
+ * @version 2.1.6 2024-04-20
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -62,14 +62,16 @@
  * @since 2.1.3 - fixed bug: Option list does not take into account 'Order by' and 'Order direction'. - 2024-02-12
  * @since 2.1.4 - added function getEqualValue() as workaround to prevent Page::trackChange() triggered by PageComparison::isEqual() resulting in a message even if nothing has changed due to strict object comparison (Bug in ProcessWire) - 2024-03-27
  * @since 2.1.5 - fixed bug: function getEqualValue() receive current page value (SelectExtOption or WireArray) from page data array instead of direct access via __get()resulting in error - 2024-03-29
- */
+ * @since 2.1.6 - update setDatabase() prevents the instantiation of duplicates of database connections that can lead to a database exception by exceeding 'max_user_connections' - 2024-04-20
+ * 
+ */ 
 
 class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 215,
+			'version' => 216,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -81,6 +83,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	}
 	
 	protected $database = null;
+	protected $databases = [];
 
 	/**
 	 * Max allowed number of options
@@ -97,12 +100,33 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 * 
 	 */
 	protected function setDatabase(Field $field) {
-		if (!$field) $this->database = $this->wire('database');
-		else if (!strlen($field->db_user.$field->db_pass.$field->db_name)) {
+
+		if ($this->lastAccessField == $field && $this->database) return true;
+		if (array_key_exists($field->id, $this->databases)) {
+			if (!($this->databases[$field->id] instanceof WireDatabasePDO)) {
+				$type = gettype($this->databases[$field->id]);
+				if ($type == 'object') {
+					$class = get_class($this->databases[$field->id]);
+					$type = "instanceof $class";
+				}
+				unset($this->databases[$field->id]);
+				throw new WireException("Expected instance of WireDatabasePDO for FieldtypeSelectExtOption::databases[$field->id] $type given");
+			} else {
+				$this->database = $this->databases[$field->id];
+				$this->setLastAccessField($field);
+				return true;
+			}
+		}
+
+		if (!strlen($field->db_user.$field->db_pass.$field->db_name)) {
+			$this->setLastAccessField($field);
 			$this->database = $this->wire('database');
+			$this->databases[$field->id] = $this->database;
+			return true;
 		}
 		else if (strlen($field->db_user) == 0 || strlen($field->db_pass) == 0 || strlen($field->db_name) == 0) {
-			$this->database= $this->wire('database');
+			$this->database = $this->wire('database');
+			unset($this->databases[$field->id]);
 			if (!count($_POST)) $this->error('Setting an external database failed: Missing value/s');
 			return false;
 		}
@@ -131,19 +155,23 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 				$driver_options = array(
 					\PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES '$charset'",
 					\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-					\PDO::ATTR_TIMEOUT => 5
+					\PDO::ATTR_TIMEOUT => 5,
+					\PDO::ATTR_PERSISTENT => true // test to get better performance ...
 					);
 				$database = new WireDatabasePDO($dsn, $username, $password, $driver_options); 
 				$database->setDebugMode($this->wire('config')->debug);
-				$this->database = $database;			
-			} catch (Exception $e) {
+				$this->database = $database;
+				$this->databases[$field->id] = $database;
+				$this->setLastAccessField($field);
+				return true;		
+			} catch (\PDOException $e) {
 				if (!count($_POST)) {
 					$this->error('Setting an external database failed: '.$e->getMessage());
 					return false;
 				}
 			}
 		}
-		return true;
+		throw new WireException("Unepected error");	
 	}
 
 	/**
