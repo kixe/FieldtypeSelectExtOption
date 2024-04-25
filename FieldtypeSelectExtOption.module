@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 2.1.6 2024-04-20
+ * @version 2.1.7 2024-04-25
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -63,7 +63,7 @@
  * @since 2.1.4 - added function getEqualValue() as workaround to prevent Page::trackChange() triggered by PageComparison::isEqual() resulting in a message even if nothing has changed due to strict object comparison (Bug in ProcessWire) - 2024-03-27
  * @since 2.1.5 - fixed bug: function getEqualValue() receive current page value (SelectExtOption or WireArray) from page data array instead of direct access via __get()resulting in error - 2024-03-29
  * @since 2.1.6 - update setDatabase() prevents the instantiation of duplicates of database connections that can lead to a database exception by exceeding 'max_user_connections' - 2024-04-20
- * 
+ * @since 2.1.7 - fixed bug: getSaveableValue() should always return array - 2024-04-25
  */ 
 
 class FieldtypeSelectExtOption extends FieldtypeMulti {
@@ -71,7 +71,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 216,
+			'version' => 217,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -792,13 +792,13 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		// execute statement
 		$query = $this->database->prepare($statement);
 		$query->execute();
-		if (!$query->rowCount()) return null;
+		if (!$query->rowCount()) return [];
 
 		$result = [];
         while($row = $query->fetch(\PDO::FETCH_ASSOC)) {
         	$result[] = (int) $row[$field->option_value];
         }
-        if (empty($result)) return null;
+        if (empty($result)) return [];
         return $result;
 	}
 	
