@@ -11,7 +11,7 @@
  * 
  * made by kixe (Christoph Thelen) 2015-03-09
  * Licensed under GNU/GPL v3
- * @version 2.1.8 2024-05-10
+ * @version 2.1.9 2024-05-28
  * 
  * ProcessWire 2.x, 3.x
  * Copyright (C) 2013 by Ryan Cramer 
@@ -70,6 +70,7 @@
  * and adding of() functions to the value classes similar to FieldtypeOptions,
  * made compatible with FieldtypeFile custom fields
  * fixed getEqualValue() bug if multiple options selected - 2024-05-10
+ * @since 2.1.9 - fixed formatValue() bug if value is not of type SelectExtOption or SelectExtOptionArray - 2024-05-28
  * 
  */
 
@@ -78,7 +79,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 218,
+			'version' => 219,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -735,10 +736,11 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 * 
 	 */
 	public function ___formatValue(Page $page, Field $field, $value) {
+		$value = $this->sanitizeValue($page, $field, $value);
 		if ($value instanceof SelectExtOption) {
 			$_value = clone $value;
 		} else {
-			$_value = $this->getBlankValue($page, $field); 
+			$_value = new SelectExtOptionArray();
 			foreach($value as $option) {
 				$_option = clone $option; 
 				$_value->add($_option); 
@@ -788,6 +790,8 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		}
 
 		// return human readable string or array of strings
+		$value = $this->sanitizeValue($page, $field, $value);
+		$value->of(true);
 		if ($value instanceof SelectExtOption) return "$value";
 		else {
 			$return = [];
