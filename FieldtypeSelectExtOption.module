@@ -253,7 +253,9 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 				}
 			}
 		}
-		throw new WireException("Unepected error");	
+		if (!count($_POST)) {
+			throw new WireException("Unepected error");
+		}
 	}
 
 	/**
