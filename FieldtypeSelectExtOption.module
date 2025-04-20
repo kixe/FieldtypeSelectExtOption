@@ -199,7 +199,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			$this->setLastAccessField($field);
 			$this->database = $this->wire('database');
 			$this->databases[$field->id] = $this->database;
-			$this->tables = $database->getTables();
+			$this->tables = $this->database->getTables();
 			return true;
 		}
 		// missing required spec to establish external db connection
