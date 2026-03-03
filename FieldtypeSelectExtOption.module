@@ -72,6 +72,7 @@
  * fixed getEqualValue() bug if multiple options selected - 2024-05-10
  * @since 2.1.9 - fixed formatValue() bug if value is not of type SelectExtOption or SelectExtOptionArray - 2024-05-28
  * @since 2.2.0 - better exception handling if external database connection fails – 2025-04-20
+ * @since 2.2.1 - fixed PHP 8.5 deprecation warnings – 2026-03-03
  * 
  */
 
@@ -80,7 +81,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Select External Option',
-			'version' => 220,
+			'version' => 221,
 			'summary' => __('Fieldtype which generates the options for a Select Inputfield from *any* table in *any* database hosted *anywhere*. Define database, source table, columns (to pull value & label) and the preferred Inputfieldtype in field settings.'),
 			'author' => 'kixe',
 			'href' => 'http://modules.processwire.com/modules/fieldtype-select-ext-option/',
@@ -1018,7 +1019,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->attr('name', 'option_table');
 		$f->required = true;
 		$f->attr('value', $field->option_table);
-		if (!$field->option_table) $f->addOption(null, 'no table selected!',array('selected'=>'selected'));
+		if (!$field->option_table) $f->addOption(0, 'no table selected!',array('selected'=>'selected'));
 		// we use $dir for limit to check if one single row exists
 		$table = $this->getExtOptions($field->option_table,false,false,false,false,'LIMIT 1');
 		if ($table === null && !count($_POST)) $f->error('Table doesn\'t contain any data!');
@@ -1038,7 +1039,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			if ($this->isIntColumn($field->option_table,$value)) $f->addOption($value, $value);
 		}
 		if ($this->database && $field->option_table && !count($f->getOptions()) && !count($_POST)) $f->error("Only tables with columns of type 'integer' allowed!");
-		if (!$field->option_value) $f->addOption(null, 'no column selected!',array('selected'=>'selected'));		
+		if (!$field->option_value) $f->addOption(0, 'no column selected!',array('selected'=>'selected'));		
 		$f->columnWidth = 34; 
 		$fieldset->append($f);
 
@@ -1051,7 +1052,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->attr('name', 'option_label');
 		$f->attr('value', $field->option_label);
 		$f->description = $this->_("Choose from all columns.");
-		if (!$field->option_label) $f->addOption(null, 'no column selected!',array('selected'=>'selected'));
+		if (!$field->option_label) $f->addOption(0, 'no column selected!',array('selected'=>'selected'));
 		if ($columns) foreach ($columns as $label) $f->addOption($label, $label);
 		$f->columnWidth = 33; 
 		$fieldset->append($f);
@@ -1067,7 +1068,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 				$f->attr('name', "option_label_$otherLanguagePageID");
 				$f->attr('value', $field->{"option_label_$otherLanguagePageID"});
 				$f->description = $this->_("Choose from all columns.");
-				if (!$field->option_label) $f->addOption(null, 'no column selected!',array('selected'=>'selected'));
+				if (!$field->option_label) $f->addOption(0, 'no column selected!',array('selected'=>'selected'));
 				if ($columns) foreach ($columns as $label) $f->addOption($label, $label);
 				$f->columnWidth = $columnWidth;
 				$f->collapsed = Inputfield::collapsedBlank;
