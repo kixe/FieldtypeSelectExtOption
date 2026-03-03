@@ -1019,7 +1019,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->attr('name', 'option_table');
 		$f->required = true;
 		$f->attr('value', $field->option_table);
-		if (!$field->option_table) $f->addOption(0, 'no table selected!',array('selected'=>'selected'));
+		if (!$field->option_table) $f->addOption('', 'no table selected!',array('selected'=>'selected'));
 		// we use $dir for limit to check if one single row exists
 		$table = $this->getExtOptions($field->option_table,false,false,false,false,'LIMIT 1');
 		if ($table === null && !count($_POST)) $f->error('Table doesn\'t contain any data!');
@@ -1039,7 +1039,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 			if ($this->isIntColumn($field->option_table,$value)) $f->addOption($value, $value);
 		}
 		if ($this->database && $field->option_table && !count($f->getOptions()) && !count($_POST)) $f->error("Only tables with columns of type 'integer' allowed!");
-		if (!$field->option_value) $f->addOption(0, 'no column selected!',array('selected'=>'selected'));		
+		if (!$field->option_value) $f->addOption('', 'no column selected!',array('selected'=>'selected'));		
 		$f->columnWidth = 34; 
 		$fieldset->append($f);
 
@@ -1052,7 +1052,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		$f->attr('name', 'option_label');
 		$f->attr('value', $field->option_label);
 		$f->description = $this->_("Choose from all columns.");
-		if (!$field->option_label) $f->addOption(0, 'no column selected!',array('selected'=>'selected'));
+		if (!$field->option_label) $f->addOption('', 'no column selected!',array('selected'=>'selected'));
 		if ($columns) foreach ($columns as $label) $f->addOption($label, $label);
 		$f->columnWidth = 33; 
 		$fieldset->append($f);
@@ -1068,7 +1068,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 				$f->attr('name', "option_label_$otherLanguagePageID");
 				$f->attr('value', $field->{"option_label_$otherLanguagePageID"});
 				$f->description = $this->_("Choose from all columns.");
-				if (!$field->option_label) $f->addOption(0, 'no column selected!',array('selected'=>'selected'));
+				if (!$field->option_label) $f->addOption('', 'no column selected!',array('selected'=>'selected'));
 				if ($columns) foreach ($columns as $label) $f->addOption($label, $label);
 				$f->columnWidth = $columnWidth;
 				$f->collapsed = Inputfield::collapsedBlank;
