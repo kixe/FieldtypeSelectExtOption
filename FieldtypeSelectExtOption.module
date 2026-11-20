@@ -385,6 +385,29 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 		return $return;	
 	}
 
+	/**
+	 * Sort options by label, keeping their keys, in the order asort()/arsort() with
+	 * SORT_LOCALE_STRING gave (that flag is deprecated as of PHP 8.6): Collator (intl)
+	 * for the current LC_COLLATE locale, and byte order, which is what that flag gives
+	 * in the C/POSIX locale, there or when intl isn't installed.
+	 *
+	 * @param array $options
+	 * @param bool $desc
+	 *
+	 */
+	protected function sortOptionsByLabel(array &$options, $desc = false) {
+		$locale = (string) setlocale(LC_COLLATE, 0);
+		if (class_exists('\Collator') && !in_array(strtoupper($locale), array('', 'C', 'POSIX', 'C.UTF-8'))) {
+			$collator = new \Collator($locale);
+			if ($collator->asort($options, \Collator::SORT_STRING)) {
+				if ($desc) $options = array_reverse($options, true);
+				return;
+			}
+		}
+		if ($desc) arsort($options, SORT_STRING);
+		else asort($options, SORT_STRING);
+	}
+
 	public function getInputfield(Page $page, Field $field) {
 
 		// get (set default) name of Inputfieldtype
@@ -404,8 +427,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 
 		foreach($options as $optval => &$label) $label = $this->label($label, $optval, $page, $field);
 		if (!$field->option_order) {
-			if ($field->option_asc) arsort($options, SORT_LOCALE_STRING); // sort descending by final label
-			else asort($options, SORT_LOCALE_STRING); // sort ascending by final label
+			$this->sortOptionsByLabel($options, (bool) $field->option_asc); // sort by final label (option_asc: descending)
 		}
 		// else ksort($options); // DO NOT SORT, because already sorted by database query "order by"
 		$inputfield->addOptions($options, true);
