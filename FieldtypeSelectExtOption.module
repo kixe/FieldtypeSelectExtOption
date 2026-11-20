@@ -479,7 +479,7 @@ class FieldtypeSelectExtOption extends FieldtypeMulti {
 	 * @return array
 	 *
 	 */
-	public function options($field = null, Language $language = null) {
+	public function options($field = null, $language = null) {
 		if (!$field instanceof Field) {
 			$selector = '';
 			if (is_int($field)) $selector = ",id=$field";
